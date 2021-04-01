@@ -1,5 +1,5 @@
 ## [windows powershell 命令](https://docs.microsoft.com/zh-cn/windows-server/administration/windows-commands/commands-by-server-role)
-# VSCode插件
+# [VSCode插件](https://marketplace.visualstudio.com/)
 ## [Java支持包](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack)
 ## [Python支持包](https://marketplace.visualstudio.com/items?itemName=donjayamanne.python-extension-pack)
 ## [Spring Boot支持包](https://marketplace.visualstudio.com/items?itemName=Pivotal.vscode-boot-dev-pack)
