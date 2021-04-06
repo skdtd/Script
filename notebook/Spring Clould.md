@@ -5,7 +5,7 @@
 [技术选型]: https://start.spring.io/actuator/info "各版本对应关系"
 [推荐版本]: https://docs.spring.io/spring-cloud/docs/current/reference/html/ "Spring Cloud对应的Boot"
 
-> Spring Cloud 链接
+> Spring Cloud
 >> [源码]<br/>
 >> [版本对应关系]<br/>
 >> [技术选型]<br/>
