@@ -64,7 +64,7 @@ USER            # 指定用户可以运行这个DockerFile文件
 docker run -d -p 9000:8080 --name mytomcat \
 -v /{HOST_PATH}/{WORK_DIR}:/usr/local/tomcat/webapps/{WORK_DIR} \  # 挂载工程目录
 -v /{HOST_PATH}/logs:/usr/local/tomcat/logs \                      # 挂载日志目录
---privileged=true
+--privileged=true                                                  # 特权登录
 tomcat
 
 # mysql(5.6)
