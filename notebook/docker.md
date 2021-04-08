@@ -83,7 +83,7 @@ docker run -p 8888:6379 \
 --appendonly yes                                                # 启动备份
 ```
 
-# ~~~[docker swarm集群]~~~(https://www.runoob.com/docker/docker-swarm.html)
+# [docker swarm集群](https://www.runoob.com/docker/docker-swarm.html)
 ## 安装
 ### 1.  环境准备
 ```markdown
