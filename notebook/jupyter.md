@@ -14,6 +14,24 @@ npm config set registry https://registry.npm.taobao.org
 npm update
 ```
 
+```bash
+# jupyter-notebook中文
+echo "export LANG='zh_CN.UTF8'" >> ~/.bashrc
+```
+
+```python
+# jupyter-lab 配置
+c.ServerApp.ip = '*'
+c.ServerApp.allow_remote_access = True
+c.ServerApp.root_dir = '/root/data/notebook'
+c.ServerApp.password = u'sha1:99cb284c7992:685e06fe4f24004b7ad704099915d8e840f7e564' # 117788
+c.ServerApp.password_required = True
+c.ServerApp.quit_button = False
+c.ServerApp.allow_root = True
+c.ServerApp.open_browser = False
+```
+
+
 # [安装jupyter](https://lyric.im/c/the-craft-of-selfteaching/T-appendix.jupyter-installation-and-setup)
 ```shell
 pip install jupyterlab 
