@@ -1,5 +1,27 @@
 # 命令
 ```bash
+# 添加box
+vagrant box add e:\Downloads\CentOS-7.box --name centos-7
+# 查看box列表
+vagrant box list
+# 创建虚拟机
+vagrant init centos-7
+# 启动虚拟机
+vagrant up
+# 查看虚拟机状态
+vagrant status
+# 连接虚拟机
+vagrant ssh
+# 停止虚拟机
+vagrant halt
+# 暂停虚拟机
+vagrant suspend
+# 恢复虚拟机
+vagrant resume
+# 重载虚拟机(重新加载 Vagrantfile 中的配置信息)
+vagrant reload
+# 删除虚拟机
+vagrant destroy
 # 查看ssh配置
 vagrant ssh-config
 # 打包当前环境为box
