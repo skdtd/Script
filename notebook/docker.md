@@ -179,3 +179,120 @@ docker service rm {服务名}
 [port]:    https://docs.docker.com/engine/reference/commandline/port/     "查看容器映射端口"
 [exec]:    https://docs.docker.com/engine/reference/commandline/exec/     "在容器中执行命令"
 <!-- URL LIST END -->
+
+
+
+
+
+
+
+
+
+
+
+
+# docker 离线安装
+1. [下载安装包](https://download.docker.com/linux/static/stable/x86_64/)(此步骤需要在线完成)
+2. 解压
+```bash
+tar xzvf /path/to/<FILE>.tar.gz
+```
+3. 复制到`/usr/bin`目录
+```bash
+cp docker/* /usr/bin/
+```
+4. 注册服务
+```bash
+tee /etc/systemd/system/docker.service << EOF
+[Unit]
+Description=Docker Application Container Engine
+Documentation=https://docs.docker.com
+After=network-online.target firewalld.service
+Wants=network-online.target
+[Service]
+Type=notify
+#the default is not to use systemd for cgroups because the delegate issues still
+#exists and systemd currently does not support the cgroup feature set required
+#for containers run by docker
+ExecStart=/usr/bin/dockerd
+ExecReload=/bin/kill -s HUP $MAINPID
+#Having non-zero Limit*s causes performance problems due to accounting overhead
+#in the kernel. We recommend using cgroups to do container-local accounting.
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+#Uncomment TasksMax if your systemd version supports it.
+#Only systemd 226 and above support this version.
+#TasksMax=infinity
+TimeoutStartSec=0
+#set delegate yes so that systemd does not reset the cgroups of docker containers
+Delegate=yes
+#kill only the docker process, not all processes in the cgroup
+KillMode=process
+#restart the docker process if it exits prematurely
+Restart=on-failure
+StartLimitBurst=3
+StartLimitInterval=60s
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+5. 重载UNIT配置文件
+```bash
+systemctl daemon-reload
+```
+6. 设置开机启动
+```bash
+systemctl enable docker.service
+```
+7. 启动docker
+```bash
+systemctl start docker
+```
+
+
+
+ip address |sed -rn '/state UP/{n;n;s#^ *inet (.*)/.*$#\1#gp}'
+yum deplist wget | grep provider | awk '{print $2}'
+# 离线安装kubernetes
+# 备份源仓库
+cp -p /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.$(date +%Y%m%d%S)
+
+# 使用阿里云镜像源
+curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+
+# 更新缓存
+yum clean all && yum makecache
+
+# 添加阿里云Docker源
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+
+
+# 下载离线包
+yum install --downloadonly --downloaddir=. \
+    createrepo yum-utils nfs-utils wget                     \
+    yum-utils  nfs-utils wget                               \
+    device-mapper-persistent-data lvm2                      \
+    docker-ce-19.03.5 docker-ce-cli-19.03.5 containerd.io   \
+    chrony                                                  \
+    haproxy keepalived
+
+# 添加kubernetes源
+tee /etc/yum.repos.d/kubernetes.repo << EOF
+[kubernetes]
+name=Kubernetes
+baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
+       http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+
+
+yum install --downloadonly --downloaddir=. kubelet-1.17.1 kubeadm-1.17.1 kubectl-1.17.1
+
+
+
+https://www.jianshu.com/p/fd9f1076ea2d
