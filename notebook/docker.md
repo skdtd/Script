@@ -292,7 +292,48 @@ EOF
 
 
 yum install --downloadonly --downloaddir=. kubelet-1.17.1 kubeadm-1.17.1 kubectl-1.17.1
+yum install --downloadonly --downloaddir=. kubelet kubeadm kubectl
 
 
 
 https://www.jianshu.com/p/fd9f1076ea2d
+
+
+# 修改tag
+docker images \
+    | grep registry.cn-shanghai.aliyuncs.com/k8s-deps \
+    | sed 's/registry.cn-hangzhou.aliyuncs.com\/lfy_k8s_images/k8s.gcr.io/' \
+    | awk '{print "docker tag " $3 " " $1 ":" $2}' \
+    | sh
+
+# 删除源镜像
+docker images \
+    | grep registry.cn-shanghai.aliyuncs.com \
+    | awk '{print "docker rmi " $1 ":" $2}' \
+    | sh
+
+# k8s集群依赖
+docker pull registry.cn-shanghai.aliyuncs.com/k8s-deps/kube-apiserver:v1.21.0
+docker pull registry.cn-shanghai.aliyuncs.com/k8s-deps/kube-controller-manager:v1.21.0
+docker pull registry.cn-shanghai.aliyuncs.com/k8s-deps/kube-scheduler:v1.21.0
+docker pull registry.cn-shanghai.aliyuncs.com/k8s-deps/kube-proxy:v1.21.0
+docker pull registry.cn-shanghai.aliyuncs.com/k8s-deps/pause:3.4.1
+docker pull registry.cn-shanghai.aliyuncs.com/k8s-deps/etcd:3.4.13-0
+docker pull registry.cn-shanghai.aliyuncs.com/k8s-deps/coredns:v1.8.0
+
+# calico网络插件
+curl https://docs.projectcalico.org/manifests/calico-typha.yaml -o calico.yaml
+docker pull docker.io/calico/typha:v3.18.1
+docker pull docker.io/calico/cni:v3.18.1
+docker pull docker.io/calico/pod2daemon-flexvol:v3.18.1
+docker pull docker.io/calico/node:v3.18.1
+docker pull docker.io/calico/kube-controllers:v3.18.1
+
+# dashboard可视化
+curl https://raw.githubusercontent.com/kubernetes/dashboard/v2.2.0/aio/deploy/recommended.yaml -o dashboard.yaml
+docker pull kubernetesui/dashboard:v2.0.0-rc5
+docker pull kubernetesui/metrics-scraper:v1.0.3
+
+# kuboard可视化
+curl https://kuboard.cn/install-script/kuboard.yaml -o kuboard.yaml
+docker pull eipwork/kuboard
