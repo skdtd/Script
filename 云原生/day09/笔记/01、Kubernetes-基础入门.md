@@ -854,7 +854,7 @@ kubeadm init \
 --service-cidr=10.96.0.0/16 \
 --pod-network-cidr=192.168.0.0/16
 
-
+### 失败的话使用kubeadm reset重置
 ```
 
 - 4、master结束以后，按照控制台引导继续往下
