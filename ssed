@@ -1,0 +1,10 @@
+#!/bin/bash
+
+function ssed(){
+    FILE=$1
+    KEY=$2
+    VALUE=$3
+    grep -q "^${KEY}" ${FILE} && sed -i "s/^${KEY}.*/${KEY}=${VALUE}/" ${FILE} || echo "${KEY}=${VALUE}" >> ${FILE}
+}
+
+ssed $@

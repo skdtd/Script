@@ -2,7 +2,7 @@
 
 ## 获取docker二进制文件版本最新版
 ```bash
-echo $(curl https://download.docker.com/linux/static/stable/x86_64/) | grep -Po "docker.*?tgz" | uniq | grep -Ev "ce|rootless" | sed -n '$p'
+echo $(curl https://download.docker.com/linux/static/stable/x86_64/) | grep -Po "docker.*?\." | uniq | grep -Ev "ce|rootless" | sed -n '$p'
 ```
 ## 下载解压并复制到启动目录
 ```bash
