@@ -1,10 +1,87 @@
 #!/bin/bash
 
+
+FILE=$1
+KEY=$2
+VALUE=$3
+
+#########################################################################
+#
+# 输出log
+# 根据日志标签输出对应日志
+# 需要提前载入日志文本
+#
+# 格式:
+# LOGTAG1 'LOGMSG1'
+# LOGTAG2 'LOGMSG2'
+# LOGTAG3 'LOGMSG3'
+# ....
+#
+# usage: log [isExit] LOGTAG param1 param2 param3 ...
+# isExit: 是否在打印完log之后退出脚本的代码,为空则不退出脚本,必须为数字
+# LOGTAG: 
+#
+#########################################################################
+function log(){
+    
+}
+
+function usage(){
+    pass
+}
+
+
+
+#########################################################################
+#
+# 参数检查
+# 通过则无响应
+# 不通过则显示消息并退出
+# usage: checkParma COUNT param1 param2 param3 ...
+# COUNT: 需要检查的参数个数
+# param...: 与count对应个数的不为空的参数
+#
+#########################################################################
+function checkParma(){
+    local COUNT=$1
+    shift
+    local LIST=($@)
+
+    for (( i = 0; i < ${COUNT}; i++ ))
+    do
+        if [[ -z ${LIST[$i]} ]];then
+            echo "At least ${COUNT} parameters are required"
+            exit 1
+        fi
+    done
+}
+
+
+
+function checkFile(){
+    local LIST=$@
+    echo $LIST
+    for ITEM in ${LIST[@]}
+    do
+        if   [[ ! -f ${ITEM} ]];then
+            /usr/bin/touch ${ITEM}
+        elif [[ ! -r ${ITEM} ]];then
+            echo ${ITEM} is unreadable.
+            exit 1
+        elif [[ ! -w ${ITEM} ]];then
+            echo ${ITEM} is not writable.
+            exit 1
+        else
+            continue
+        fi
+    done
+}
+
+
 function ssed(){
-    FILE=$1
-    KEY=$2
-    VALUE=$3
     grep -q "^${KEY}" ${FILE} && sed -i "s/^${KEY}.*/${KEY}=${VALUE}/" ${FILE} || echo "${KEY}=${VALUE}" >> ${FILE}
 }
 
-ssed $@
+# ssed $@
+
+
