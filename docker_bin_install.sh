@@ -126,3 +126,47 @@ tee /opt/ssl/k8sca/ca-csr.json << EOF
 }
 EOF
 ```
+
+
+# 无网络升级内核
+```shell
+升级方法：
+
+在能上网的机器下载内核rpm包，传到不能上网的机器安装
+
+准备两台机器：
+
+192.168.1.1（能上网）和192.168.1.2（不能上网）
+
+两台机器的系统版本：
+
+[root@localhost ~]# uname -r
+3.10.0-1062.el7.x86_64
+[root@localhost ~]# cat /etc/redhat-release
+CentOS Linux release 7.7.1908 (Core)
+
+192.168.1.1操作如下：
+
+修改yum配置文件，让yum安装的内核rpm包能够保存在本地：vi /etc/yum.conf   把keepcache=0改为1
+导入ELRepo仓库的公共密钥rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+安装ELRepo仓库的yum源rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm
+查看可用的内核安装包yum --disablerepo="*" --enablerepo="elrepo-kernel" list available
+安装内核包yum --enablerepo=elrepo-kernel install kernel-lt（kernel-lt根据第4步列出来的选择）
+[root@localhost packages]# pwd
+/var/cache/yum/x86_64/7/elrepo-kernel/packages
+[root@localhost packages]# ll
+total 106772
+-rw-r--r-- 1 root root 52542012 Jul 22 09:34 kernel-lt-5.4.134-1.el7.elrepo.x86_64.rpm
+传安装包：scp /var/cache/yum/x86_64/7/elrepo-kernel/packages/kernel-lt-5.4.134-1.el7.elrepo.x86_64.rpm 192.168.1.2:/opt
+192.168.1.2操作如下：
+
+安装内核：rpm -ivh /opt/kernel-lt-5.4.134-1.el7.elrepo.x86_64.rpm
+检查是否安装成功，看到5.4.134已经存在：sudo awk -F\' '$1=="menuentry " {print i++ " : " $2}' /etc/grub2.cfg
+编辑 /etc/default/grub 文件设置 GRUB_DEFAULT=0，sed -i 's/saved/0/g' /etc/default/grub通过上面查询显示的编号为 0 的内核作为默认内核
+生成 grub 配置文件并重启grub2-mkconfig -o /boot/grub2/grub.cfg && reboot
+查看内核：
+[root@localhost ~]# uname -a
+Linux localhost.localdomain 5.4.134-1.el7.elrepo.x86_64 #1 SMP Thu Jul 22 08:58:15 EDT 2021 x86_64 x86_64 x86_64 GNU/Linux
+[root@localhost ~]# cat /etc/redhat-release
+CentOS Linux release 7.7.1908 (Core)
+```
