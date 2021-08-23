@@ -75,3 +75,54 @@ export PATH=$PATH:~/.local/bin/kubectl
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 ```
+
+## cfssl
+```shell
+curl -L --remote-name-all https://github.com/cloudflare/cfssl/releases/download/v${CFSSL_VERSION}/{cfssljson_${CFSSL_VERSION}_linux_amd64,cfssl_${CFSSL_VERSION}_linux_amd64,cfssl-certinfo_${CFSSL_VERSION}_linux_amd64}
+
+chmod +x cfssl*
+
+for name in `ls cfssl*`; do mv $name ${name%_${CFSSL_VERSION}_linux_amd64}; done
+
+mv cfssl* /usr/bin
+
+tee /opt/ssl/k8sca/ca-config.json << EOF
+{
+    "signing": {
+        "default": {
+            "expiry": "87600h"
+        },
+        "profiles": {
+            "kubernetes": {
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth",
+                    "client auth"
+                ],
+                "expiry": "87600h"
+            }
+        }
+    }
+}
+EOF
+
+tee /opt/ssl/k8sca/ca-csr.json << EOF
+{
+    "CN": "kubernetes",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C": "CN",
+            "L": "Shanghai",
+            "O": "kubernetes",
+            "ST": "Shanghai",
+            "OU": "kubernetes"
+        }
+    ]
+}
+EOF
+```
