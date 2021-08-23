@@ -60,3 +60,18 @@ systemctl status docker             #查看Docker状态
 
 
 # k8s安装
+## kubectl
+```shell
+# 下载最新版kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+# 非root用户安装
+mkdir -p ~/.local/bin/kubectl
+mv ./kubectl ~/.local/bin/kubectl
+tee -a ~/.bashrc << EOF
+export PATH=$PATH:~/.local/bin/kubectl
+
+# root用户安装
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+```
