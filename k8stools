@@ -1,0 +1,35 @@
+#!/bin/bash
+
+####################################
+#
+# 分发公钥
+# distributeSshId user1@host1 user2@host2 user3@host3
+# distributeSshId hostFile
+# hostFile格式:
+# host1 user1 passwd1
+# host2 user2 passwd2
+# host3 user3 passwd3
+# ...
+#
+####################################
+function distributeSshId(){
+    if [[ $# == 2 && -f $1 && -r $1 ]]; then
+        sshpass > /dev/null 2>&1
+        # 组装命令
+        if [[ $? == 0 ]]; then
+            CMD='sshpass -p $passwd sh-copy-id '
+        fi
+
+
+
+        while read line
+        do
+            echo $line
+        done < $2
+    else
+        for i in $@
+        do 
+            echo $i
+        done
+    fi
+}
