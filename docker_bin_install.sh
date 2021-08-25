@@ -158,6 +158,9 @@ curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-schedule
 ```
 
 
+## curl并发访问
+https://www.jianshu.com/p/025e4f3cf668
+
 
 
 
