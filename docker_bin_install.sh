@@ -78,7 +78,6 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 ## cfssl
 ```shell
-CFSSL_VERSION=$(echo $(curl -sS https://github.com/cloudflare/cfssl/releases/latest | grep -Po '\d+(\.\d+){2}'))
 curl -L --remote-name-all https://github.com/cloudflare/cfssl/releases/download/v${CFSSL_VERSION}/{cfssljson_${CFSSL_VERSION}_linux_amd64,cfssl_${CFSSL_VERSION}_linux_amd64,cfssl-certinfo_${CFSSL_VERSION}_linux_amd64}
 
 chmod +x cfssl*
@@ -127,40 +126,6 @@ tee /opt/ssl/k8sca/ca-csr.json << EOF
 }
 EOF
 ```
-
-# etcd
-```shell
-ETCD_VERSION=$(echo $(curl -sS https://github.com/etcd-io/etcd/releases/latest | grep -Po '\d+(\.\d+){2}'))
-curl -LO https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
-tar -zxf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin etcd-v${ETCD_VERSION}-linux-amd64/etcd{,ctl}
-```
-
-
-# kubenetes
-```shell
-K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-curl -LO https://dl.k8s.io/${K8S_VERSION}/kubernetes-server-linux-amd64.tar.gz
-
-
-# 所有master节点解压kubelet，kubectl等到 /usr/local/bin
-# master需要全部组件，node节点只需要 /usr/local/bin kubelet、kube-proxy
-tar -xf kubernetes-server-linux-amd64.tar.gz --strip-components=3 -C /usr/local/bin kubernetes/server/bin/kube{let,ctl,-apiserver,-controller-manager,-scheduler,-proxy}
-
-# 单独下载
-K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-apiserver"
-curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-controller-manager"
-curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubectl"
-curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubelet"
-curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-proxy"
-curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-scheduler"
-
-```
-
-
-
-
-
 
 
 # 无网络升级内核
