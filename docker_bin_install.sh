@@ -2,11 +2,11 @@
 
 ## 获取docker二进制文件版本最新版
 ```bash
-echo $(curl https://download.docker.com/linux/static/stable/x86_64/) | grep -Po "docker.*?\." | uniq | grep -Ev "ce|rootless" | sed -n '$p'
+DOCKER_VERSION=$(echo $(curl -sS https://download.docker.com/linux/static/stable/x86_64/) | grep -Po "docker-(\d+\.){2}(\d+)" | uniq | grep -Ev "ce|rootless" | sed -n '$p') && echo ${DOCKER_VERSION}
 ```
 ## 下载解压并复制到启动目录
 ```bash
-curl -C - -o docker-20.10.7.tgz https://download.docker.com/linux/static/stable/x86_64/docker-20.10.7.tgz  # -C - 自动断点续传
+curl -OC -  https://download.docker.com/linux/static/stable/x86_64/docker-20.10.7.tgz  # -C - 自动断点续传
 tar -zvxf docker-19.03.6.tgz
 cp docker/* /usr/bin/
 ```
@@ -78,6 +78,7 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 ## cfssl
 ```shell
+CFSSL_VERSION=$(echo $(curl -sS https://github.com/cloudflare/cfssl/releases/latest | grep -Po '\d+(\.\d+){2}'))
 curl -L --remote-name-all https://github.com/cloudflare/cfssl/releases/download/v${CFSSL_VERSION}/{cfssljson_${CFSSL_VERSION}_linux_amd64,cfssl_${CFSSL_VERSION}_linux_amd64,cfssl-certinfo_${CFSSL_VERSION}_linux_amd64}
 
 chmod +x cfssl*
@@ -127,6 +128,50 @@ tee /opt/ssl/k8sca/ca-csr.json << EOF
 EOF
 ```
 
+# etcd
+```shell
+ETCD_VERSION=$(echo $(curl -sS https://github.com/etcd-io/etcd/releases/latest | grep -Po '\d+(\.\d+){2}'))
+curl -LO https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+tar -zxf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin etcd-v${ETCD_VERSION}-linux-amd64/etcd{,ctl}
+```
+
+
+# kubenetes
+```shell
+K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+curl -LO https://dl.k8s.io/${K8S_VERSION}/kubernetes-server-linux-amd64.tar.gz
+
+
+# 所有master节点解压kubelet，kubectl等到 /usr/local/bin
+# master需要全部组件，node节点只需要 /usr/local/bin kubelet、kube-proxy
+tar -xf kubernetes-server-linux-amd64.tar.gz --strip-components=3 -C /usr/local/bin kubernetes/server/bin/kube{let,ctl,-apiserver,-controller-manager,-scheduler,-proxy}
+
+# 单独下载
+K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-apiserver"
+curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-controller-manager"
+curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubelet"
+curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-proxy"
+curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-scheduler"
+
+```
+
+
+## curl并发访问
+https://www.jianshu.com/p/025e4f3cf668
+
+< urls.txt xargs -r -L 3 -P 10 curl -LOsS
+## getopts和getopt的使用
+https://cloud.tencent.com/developer/article/1043821
+## Shell 黑科技之匿名函数实现任务并行化
+https://cloud.tencent.com/developer/article/1043998
+## 玩转 SHELL 脚本之：Shell 命令 Buffer 知多少？
+https://cloud.tencent.com/developer/article/1043855
+## 玩转 Linux 之：磁盘分区、挂载知多少？
+https://cloud.tencent.com/developer/article/1043832
+## 玩转 SHELL 脚本之：linux date 知多少？
+https://cloud.tencent.com/developer/article/1043762
 
 # 无网络升级内核
 ```shell
