@@ -2,11 +2,11 @@
 
 ## 获取docker二进制文件版本最新版
 ```bash
-echo $(curl https://download.docker.com/linux/static/stable/x86_64/) | grep -Po "docker.*?\." | uniq | grep -Ev "ce|rootless" | sed -n '$p'
+DOCKER_VERSION=$(echo $(curl -sS https://download.docker.com/linux/static/stable/x86_64/) | grep -Po "docker-(\d+\.){2}(\d+)" | uniq | grep -Ev "ce|rootless" | sed -n '$p') && echo ${DOCKER_VERSION}
 ```
 ## 下载解压并复制到启动目录
 ```bash
-curl -C - -o docker-20.10.7.tgz https://download.docker.com/linux/static/stable/x86_64/docker-20.10.7.tgz  # -C - 自动断点续传
+curl -OC -  https://download.docker.com/linux/static/stable/x86_64/docker-20.10.7.tgz  # -C - 自动断点续传
 tar -zvxf docker-19.03.6.tgz
 cp docker/* /usr/bin/
 ```
@@ -161,10 +161,17 @@ curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-schedule
 ## curl并发访问
 https://www.jianshu.com/p/025e4f3cf668
 
-
-
-
-
+< urls.txt xargs -r -L 3 -P 10 curl -LOsS
+## getopts和getopt的使用
+https://cloud.tencent.com/developer/article/1043821
+## Shell 黑科技之匿名函数实现任务并行化
+https://cloud.tencent.com/developer/article/1043998
+## 玩转 SHELL 脚本之：Shell 命令 Buffer 知多少？
+https://cloud.tencent.com/developer/article/1043855
+## 玩转 Linux 之：磁盘分区、挂载知多少？
+https://cloud.tencent.com/developer/article/1043832
+## 玩转 SHELL 脚本之：linux date 知多少？
+https://cloud.tencent.com/developer/article/1043762
 
 # 无网络升级内核
 ```shell
