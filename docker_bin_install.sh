@@ -172,6 +172,8 @@ https://cloud.tencent.com/developer/article/1043855
 https://cloud.tencent.com/developer/article/1043832
 ## 玩转 SHELL 脚本之：linux date 知多少？
 https://cloud.tencent.com/developer/article/1043762
+## shell解析yaml
+https://github.com/jasperes/bash-yaml/blob/master/script/yaml.sh
 
 # 无网络升级内核
 ```shell
@@ -196,7 +198,7 @@ CentOS Linux release 7.7.1908 (Core)
 导入ELRepo仓库的公共密钥rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
 安装ELRepo仓库的yum源rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm
 查看可用的内核安装包yum --disablerepo="*" --enablerepo="elrepo-kernel" list available
-安装内核包yum --enablerepo=elrepo-kernel install kernel-lt（kernel-lt根据第4步列出来的选择）
+安装内核包yum --enablerepo=elrepo-kernel install kernel-lt --downloadonly  --downloaddir=.（kernel-lt根据第4步列出来的选择）
 [root@localhost packages]# pwd
 /var/cache/yum/x86_64/7/elrepo-kernel/packages
 [root@localhost packages]# ll
