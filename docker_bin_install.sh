@@ -157,6 +157,11 @@ curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-schedule
 
 ```
 
+# master需要的组件: Controller manager, etcd, scheduler, api server, kubectl
+# node需要的组件: kubelet, kube-proxy
+
+
+
 
 ## curl并发访问
 https://www.jianshu.com/p/025e4f3cf668
@@ -174,6 +179,17 @@ https://cloud.tencent.com/developer/article/1043832
 https://cloud.tencent.com/developer/article/1043762
 ## shell解析yaml
 https://github.com/jasperes/bash-yaml/blob/master/script/yaml.sh
+
+
+
+
+
+
+
+
+
+
+
 
 # 无网络升级内核
 ```shell
