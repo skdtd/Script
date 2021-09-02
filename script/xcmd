@@ -22,15 +22,15 @@ colorEcho(){
 
 ##########################################
 #
-# 帮助
+# usage
 #
 ##########################################
 usage(){
     cat <<< """Usage:
-    $(basename $0) [options] [args...] +- commad
+    $(basename $0) [options] [args...] .: commad
     For example: 
-        $(basename $0) -t 192.168.0.1 -t 192.168.0.2 -u +- ls -alh
-        $(basename $0) -t 192.168.0.1,192.168.0.2 -u +- ls -alh
+        $(basename $0) -t 192.168.0.1 -t 192.168.0.2 -u .: ls -alh
+        $(basename $0) -t 192.168.0.1,192.168.0.2 -u .: ls -alh
 
     -t, --target       执行命令的目标主机
 
@@ -77,17 +77,17 @@ infos(){
 ##########################################
 #
 # 获取执行命令
-# 命令行参数"+-"之后的全部参数
+# 命令行参数".:"之后的全部参数
 # 对以下全局变量赋值:
-# CMD           # 需要被执行的命令, 参数中通过"+-"来分割, 该符号之后的所有参数被视为整个命令
+# CMD        .:                 # 需要被执行的命令, 参数中通过".:"来分割, 该符号之后的所有参数被视为整个命令
 #
 ##########################################
 getCmd(){
-    # 根据"+-"切分参数, "+-"符号之后作为整个命令, 解决getopt解析所有参数的问题
+    # 根据".:"切分参数, ".:"符号之后作为整个命令, 解决getopt解析所有参数的问题
     TEMP="$*"
-    CMD=${TEMP#*+-}
+    CMD=${TEMP#*.:}
     # 检查
-    local MSG="Use \"+-\" to specify the command to execute."
+    local MSG="Use \".:\" to specify the command to execute."
     [[ -z $CMD ]] && usage ${MSG}
 }
 
@@ -95,7 +95,7 @@ getCmd(){
 ##########################################
 #
 # 读取参数并设置
-# 需要的参数, 命令行参数"+-"之前的全部参数
+# 需要的参数, 命令行参数".:"之前的全部参数
 # 对以下全局变量赋值:
 # TARGET     -t, --target       # 执行命令的目标主机
 # USERNAME   -u, --username     # 在目标主机上执行命令的用户, 所有主机必须使用同一个用户
@@ -180,7 +180,7 @@ timer(){
     nano=$(date +%N)
     local FUNC=$1
     shift
-    $FUNC $@
+    ${FUNC} $@
     cat ~/${nano}_*
     rm -f ~/${nano}_*
     set -m
@@ -214,7 +214,7 @@ main(){
     [[ $# == 0 ]] && usage
     getCmd $@
     PARS="$*"
-    PARS=${PARS%+-*}
+    PARS=${PARS%.:*}
     setOption ${PARS[@]}
     infos
     timer xcmd ${CMD}

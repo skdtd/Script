@@ -122,3 +122,12 @@ expect "*]#"
 send "exit\n"
 expect eof
 EOF
+
+
+
+
+# grep
+grep -w  # 精确匹配
+grep -c  # 统计行数
+grep -v  # 排除行
+grep [a]bc  # 只统计abc的行,不统计grep本身的进程

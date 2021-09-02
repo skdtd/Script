@@ -179,8 +179,8 @@ https://cloud.tencent.com/developer/article/1043832
 https://cloud.tencent.com/developer/article/1043762
 ## shell解析yaml
 https://github.com/jasperes/bash-yaml/blob/master/script/yaml.sh
-
-
+# 代码片段
+https://gist.github.com/pkuczynski
 
 
 
