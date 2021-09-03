@@ -2,7 +2,7 @@
 
 ## 获取docker二进制文件版本最新版
 ```bash
-DOCKER_VERSION=$(echo $(curl -sS https://download.docker.com/linux/static/stable/x86_64/) | grep -Po "docker-(\d+\.){2}(\d+)" | uniq | grep -Ev "ce|rootless" | sed -n '$p') && echo ${DOCKER_VERSION}
+DOCKER_VERSION=$(curl -sS https://download.docker.com/linux/static/stable/x86_64/ | grep -Po "docker-(\d+\.){2}(\d+)" | uniq | grep -Ev "ce|rootless" | sed -n '$p') && echo ${DOCKER_VERSION}
 ```
 ## 下载解压并复制到启动目录
 ```bash
@@ -78,7 +78,7 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 ## cfssl
 ```shell
-CFSSL_VERSION=$(echo $(curl -sS https://github.com/cloudflare/cfssl/releases/latest | grep -Po '\d+(\.\d+){2}'))
+CFSSL_VERSION=$(curl -sS https://github.com/cloudflare/cfssl/releases/latest | grep -Po '\d+(\.\d+){2}')
 curl -L --remote-name-all https://github.com/cloudflare/cfssl/releases/download/v${CFSSL_VERSION}/{cfssljson_${CFSSL_VERSION}_linux_amd64,cfssl_${CFSSL_VERSION}_linux_amd64,cfssl-certinfo_${CFSSL_VERSION}_linux_amd64}
 
 chmod +x cfssl*
@@ -130,7 +130,7 @@ EOF
 
 # etcd
 ```shell
-ETCD_VERSION=$(echo $(curl -sS https://github.com/etcd-io/etcd/releases/latest | grep -Po '\d+(\.\d+){2}'))
+ETCD_VERSION=$(curl -sS https://github.com/etcd-io/etcd/releases/latest | grep -Po '\d+(\.\d+){2}')
 curl -LO https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -zxf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin etcd-v${ETCD_VERSION}-linux-amd64/etcd{,ctl}
 ```

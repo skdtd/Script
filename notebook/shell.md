@@ -123,11 +123,98 @@ send "exit\n"
 expect eof
 EOF
 
-
-
-
 # grep
-grep -w  # 精确匹配
-grep -c  # 统计行数
-grep -v  # 排除行
+grep -w     # 精确匹配
+grep -c     # 统计行数
+grep -v     # 排除行
 grep [a]bc  # 只统计abc的行,不统计grep本身的进程
+
+# sed
+-n 只显示符合条件的行
+-r 使用拓展正则(完全的正则语法, 不加则只能使用简单的正则符号)
+## 查
+sed -n 9p file                                      # 显示第9行
+sed -n 5,9p file                                    # 显示第5到9行    
+sed -n '/[45]/p' file                               # 显示出现4和5的行
+sed -n '/202104/,/202105/p' file                    # 显示第一次匹配到'202104'至第一次匹配到'202105'的行
+sed -nr '/^$|#/!p' /etc/ssh/sshd_config             # 不显示sshd配置文件的空行和注释行
+## 删
+sed 9d file                                         # 删除第9行
+sed 5,9d file                                       # 删除第5到9行    
+sed '/[45]/d' file                                  # 删除出现4和5的行
+sed '/202104/,/202105/d' file                       # 删除第一次匹配到'202104'至第一次匹配到'202105'的行
+sed -r '/^$|#/d' /etc/ssh/sshd_config               # 只显示sshd配置文件的有效内容(排除空行和注释行)
+egrep -v '^$|#' /etc/ssh/sshd_config                # 同上
+sed -r '/(^$|#)|(^ |\t$)/d' /etc/ssh/sshd_config    # 只显示sshd配置文件的有效内容(排除空行和注释行, 但是不排除含有空格的行)
+egrep -v '(^$|#)|(^ |\t$)' /etc/ssh/sshd_config     # 同上
+## 增
+c       # replace : 替换指定行内容
+a       # append  : 向指定的行或者每一行下面追加内容
+i       # insert  : 向指定的行或者每一行上面插入内容
+sed '$a hello world' file 向最后一行之后添加hello world
+sed '3i hello world' file 在第3行前面追加hello world
+sed '4c hello world' file 将第4行替换成hello world
+## 改
+格式: s###g s///g s@@@g 中间格式只要没有特殊含义可以随意
+g: 全局匹配, 不加g则只替换每行第一个匹配到的元素
+m: 多行匹配
+i: 忽略大小写
+# 反向引用: \1表示第一个小括号, 以此类推
+echo herllo world | sed -r 's/(o)(r)/<\1>{\2}/g'            # 将匹配到的'or'第一个小括号的字母用'<>'包起来,第一个小括号的字母用'{}'包起来
+herllo w<o>{r}ld
+echo hello world | sed -r 's/(hello) (world)/\2 \1/g'       # 调换hello world的前后位置
+world hello
+
+# 多行匹配
+匹配到'<div>'的行后进行大括号的操作
+:t 设置标签名为t的标签
+n  读取下一行数据
+开始执行替换
+匹配到'</div>'则结束,否则跳回标签t再执行
+cat << EOF | sed -r '/<div>/{:t;n;s/.*cc/hello/g;/<\/div>/!bt}'
+> <html>
+>     <div>
+>         aa
+>         bb
+>
+>         cc
+>         --
+>         123
+>         a123c
+>         ++
+>         hh
+>     </div>
+> </html>
+> EOF
+<html>
+    <div>
+        aa
+        bb
+
+hello
+        --
+        123
+        a123c
+        ++
+        hh
+    </div>
+</html>
+
+
+
+
+# awk
+## 以','为列分隔符
+## BEGIN{} 读取文件之前进行的操作
+## {}      读取文件满足前面条件时执行括号里内容
+## END{}   文件读取完毕后进行的操作
+cat << EOF | awk -F, 'BEGIN{start="file open"; end="end of file"; print start}NR>=2{print $2}END{print end}'
+> 001,tom
+> 002,lucy
+> 003,kitty
+> EOF
+file open
+lucy
+kitty
+end of file
+
