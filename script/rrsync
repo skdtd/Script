@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# 获取最新版本inotify-tools
-# INOTIFY_VERSION=$(curl -sS https://github.com/inotify-tools/inotify-tools/releases/latest | sed -r 's/.*tag\/(.*)\".*/\1/g')
-# 下载
-# curl -OL https://github.com/inotify-tools/inotify-tools/archive/refs/tags/${INOTIFY_VERSION}.tar.gz 
