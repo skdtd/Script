@@ -1,0 +1,14 @@
+溢出抓
+-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=C:/dev/jvmlogs/
+
+
+tar
+--remove-files 文件加入备份文件后，就将其删除。
+--exclude=<范本样式> 排除符合范本样式的文件。
+--delete 从备份文件中删除指定的文件。
+--ignore-failed-read 忽略数据读取错误，不中断程序的执行。
+-k或--keep-old-files 解开备份文件时，不覆盖已有的文件。
+-P或--absolute-names 文件名使用绝对名称，不移除文件名称前的"/"号。
+--exclude=<范本样式> 排除符合范本样式的文件。
+--no-recursion 不做递归处理，也就是指定目录下的所有文件及子目录不予处理。
+-d，--diff，--compare 将文件系统里的文件和tar文件里的文件进行比较
