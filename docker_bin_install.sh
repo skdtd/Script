@@ -6,7 +6,7 @@ DOCKER_VERSION=$(curl -sS https://download.docker.com/linux/static/stable/x86_64
 ```
 ## 下载解压并复制到启动目录
 ```bash
-curl -OC -  https://download.docker.com/linux/static/stable/x86_64/docker-20.10.7.tgz  # -C - 自动断点续传
+curl -OC -  https://download.docker.com/linux/static/stable/x86_64/${DOCKER_VERSION}.tgz  # -C - 自动断点续传
 tar -zvxf docker-19.03.6.tgz
 cp docker/* /usr/bin/
 ```
@@ -63,13 +63,12 @@ systemctl status docker             #查看Docker状态
 ## kubectl
 ```shell
 # 下载最新版kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -sSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 
 # 非root用户安装
 mkdir -p ~/.local/bin/kubectl
 mv ./kubectl ~/.local/bin/kubectl
-tee -a ~/.bashrc << EOF
-export PATH=$PATH:~/.local/bin/kubectl
+echo 'export PATH=$PATH:~/.local/bin/kubectl' >> ~/.bashrc
 
 # root用户安装
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
@@ -154,7 +153,6 @@ curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubectl"
 curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubelet"
 curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-proxy"
 curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kube-scheduler"
-
 ```
 
 # master需要的组件: Controller manager, etcd, scheduler, api server, kubectl
@@ -209,7 +207,7 @@ https://gist.github.com/pkuczynski
 CentOS Linux release 7.7.1908 (Core)
 
 192.168.1.1操作如下：
-
+https://elrepo.org/linux/kernel/el7/x86_64/RPMS/     下载地址
 修改yum配置文件，让yum安装的内核rpm包能够保存在本地：vi /etc/yum.conf   把keepcache=0改为1
 导入ELRepo仓库的公共密钥rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
 安装ELRepo仓库的yum源rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm
@@ -233,3 +231,5 @@ Linux localhost.localdomain 5.4.134-1.el7.elrepo.x86_64 #1 SMP Thu Jul 22 08:58:
 [root@localhost ~]# cat /etc/redhat-release
 CentOS Linux release 7.7.1908 (Core)
 ```
+
+

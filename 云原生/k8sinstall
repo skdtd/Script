@@ -77,6 +77,8 @@ sudo systemctl restart docker
 
 
 # 4. 安装k8s
+> 开始yum缓存可以直接发送安装包
+> 用`--downloadonly`和`--downloaddir`指定安装包下载位置(如果不用`--downloadonly`则会现在本机安装)
 ## 1. 安装引导程序(kubeadm)
 ```shell
 # 配置K8S的yum源
@@ -98,7 +100,7 @@ yum remove -y kubelet kubeadm kubectl
 yum list kubelet --showduplicates | sort -r
 
 # 安装kubelet、kubeadm、kubectl 指定版本
-yum install -y kubelet-1.21.0 kubeadm-1.21.0 kubectl-1.21.0
+yum install -y kubelet-1.22.1 kubeadm-1.22.1 kubectl-1.22.1
 
 # 开机启动kubelet
 systemctl enable kubelet && systemctl start kubelet
@@ -106,6 +108,12 @@ systemctl enable kubelet && systemctl start kubelet
 
 ## 2. 下载镜像
 ```shell
+# docker设置代理
+mkdir -p /etc/systemd/system/docker.service.d
+tee /etc/systemd/system/docker.service.d/http-proxy.conf <<-'EOF'
+[Service]
+Environment="HTTP_PROXY=http://proxy-addr:proxy-port" "HTTPS_PROXY=http://proxy-addr:proxy-port" "NO_PROXY=localhost,127.0.0.1,docker-registry.somecorporation.com"
+EOF
 # 下载镜像
 images=(
   kube-apiserver:v1.21.0
