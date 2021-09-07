@@ -133,7 +133,8 @@ curl --remote-name-all -LC - "${K8S_URL}release/${K8S_VERSION}/bin/linux/amd64/k
 /etc/systemd/system/kubelet.service.d/10-kubelet.conf
 /etc/kubernetes/kubelet-conf.yml                        # clusterDNS 为service网络的第10个ip值,改成自己的。如：10.96.0.10
 /usr/lib/systemd/system/kube-apiserver.service
-/usr/lib/systemd/system/kube-scheduler.service 
+/usr/lib/systemd/system/kube-scheduler.service
+/usr/lib/systemd/system/kube-proxy.service
 /etc/kubernetes/kube-proxy.yaml
 
 
