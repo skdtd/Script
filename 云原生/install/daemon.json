@@ -1,0 +1,15 @@
+{
+  "exec-opts": [
+    "native.cgroupdriver=systemd"
+  ],
+  "registry-mirrors": [
+    "https://registry.cn-shanghai.aliyuncs.com/"
+  ],
+  "max-concurrent-downloads": 10,
+  "max-concurrent-uploads": 5,
+  "log-opts": {
+    "max-size": "300m",
+    "max-file": "2"
+  },
+  "live-restore": true
+}
