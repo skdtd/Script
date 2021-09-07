@@ -1,0 +1,5 @@
+CFSSL_URL='https://github.com/cloudflare/cfssl/releases/'
+ETCD_URL='https://github.com/etcd-io/etcd/releases/'
+K8S_URL='https://dl.k8s.io/'
+KERNEL_URL='https://elrepo.org/linux/kernel/el7/x86_64/RPMS/'
+DOKCER_URL='https://download.docker.com/linux/static/stable/x86_64/'

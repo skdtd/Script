@@ -1,6 +1,5 @@
 # 升级软件包(分发出去的由于是用格rpm安装,需要添加--force强制覆盖安装)
-INSTMP=$(mktemp -d)
-grep -q "^keepcache" /etc/yum.conf && sed -i "s/^keepcache.*/keepcache=1/" /etc/yum.conf || echo "keepcache=1" >> /etc/yum.conf
+INSTMP=${INSTMP:="$(mktemp -d)"}
 mkdir ${INSTMP}/updates
 yum update -y --exclude=kernel* --downloadonly --downloaddir=${INSTMP}/updates
 
@@ -106,13 +105,14 @@ systemctl enable --now docker
 CFSSL_URL='https://github.com/cloudflare/cfssl/releases/'
 CFSSL_VERSION=$(curl -sS ${CFSSL_URL}latest | sed -r 's#.*tag/v(.*)">redirected.*#\1#g')
 curl --remote-name-all -LC - ${CFSSL_URL}download/v${CFSSL_VERSION}/{cfssl-certinfo,cfssl,cfssljson}_${CFSSL_VERSION}_linux_amd64
-for name in `ls cfssl*`; do chmod +x $name; mv $name /usr/bin/${name%_${CFSSL_VERSION}_linux_amd64};  done
+for name in `ls cfssl*`; do chmod +x $name; mv $name ${name%_${CFSSL_VERSION}_linux_amd64}; done
+mv cfssl* /usr/bin/
 
 # 下载etcd
 mkdir ${INSTMP}/etcd
 ETCD_URL='https://github.com/etcd-io/etcd/releases/'
 ETCD_VERSION=$(curl -sS ${ETCD_URL}latest | sed -r 's#.*tag/(.*)">redirected.*#\1#g')
-curl -OC - ${ETCD_URL}download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
+curl -LOC - ${ETCD_URL}download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
 tar -zxvf etcd-${ETCD_VERSION}-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin etcd-${ETCD_VERSION}-linux-amd64/etcd{,ctl}
 /usr/lib/systemd/system/etcd.service
 systemctl enable --now etcd
@@ -120,10 +120,11 @@ systemctl enable --now etcd
 journalctl -u etcd   启动有问题用该命令排查
 
 # 下载k8s服务(master需要全部组件,node节点只需要 /usr/local/bin kubelet、kube-proxy)
+mkdir ${INSTMP}/k8s
 K8S_VERSION=$(curl -sSL https://dl.k8s.io/release/stable.txt)
 K8S_URL='https://dl.k8s.io/'
 curl -LOC - ${K8S_URL}${K8S_VERSION}/kubernetes-server-linux-amd64.tar.gz
-tar -xvf kubernetes-server-linux-amd64.tar.gz  --strip-components=3 -C /usr/local/bin kubernetes/server/bin/kube{let,ctl,-apiserver,-controller-manager,-scheduler,-proxy}
+tar -xvf kubernetes-server-linux-amd64.tar.gz --strip-components=3 -C /usr/local/bin kubernetes/server/bin/kube{let,ctl,-apiserver,-controller-manager,-scheduler,-proxy}
 
 curl --remote-name-all -LC - "${K8S_URL}release/${K8S_VERSION}/bin/linux/amd64/kube{let,ctl,-apiserver,-controller-manager,-scheduler,-proxy}" # 单独下载组件
 
