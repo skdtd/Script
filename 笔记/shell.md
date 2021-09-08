@@ -204,6 +204,7 @@ hello
 
 
 # awk
+awk 'BEGIN{}
 ## 以','为列分隔符
 ## BEGIN{} 读取文件之前进行的操作
 ## {}      读取文件满足前面条件时执行括号里内容
@@ -218,3 +219,47 @@ lucy
 kitty
 end of file
 
+
+# 内置变量
+NR                  取指定行号, 例: NR==1,NR>=1&&NR<=5
+NF                  当前行的总字段数($NF为最后一列)
+FNR                 当前行在文件的行数, 多个文件时根据文件单独计算
+FS                  -F, 每个字段的结束标记, 默认:空格,连续空格,制表符
+RS                  指定换行标记默认, 默认:\n
+OFS                 输出每一行的字段时使用的分隔符, 默认:空格
+ORS                 输出每一行时使用的换号符号, 默认:\n
+FILENAME            显示数据所在文件名
+
+# awk取行
+/text1/             取包含text1的行
+/text1/,/text2/     取包含text1到包含text2之间的行,包括text1和text2
+
+# awk取列
+cat << EOF | awk -F, '{print $NF}'
+001,tom
+002,lucy
+003,kitty
+EOF
+
+cat << EOF | awk -F, '{print $1,$2}' | column -t
+001,tom
+002,lucy
+003,kitty
+EOF
+
+cat << EOF | awk -F, -v OFS=: '{print $1,$2}'
+001,tom
+002,lucy
+003,kitty
+EOF
+
+cat << EOF | awk -F, -v OFS=: -v ORS=0 '{print $1,$2}'
+001,tom
+002,lucy
+003,kitty
+EOF
+
+<!-- 示例: 取网卡IP -->
+ip a s eth0 | awk -F"[ /]+" -vORS='' 'BEGIN{print "eth0: "}NR==3{print $3}END{print "\n"}'
+<!-- 示例: 取/etc/passwd中以s或者r开头并且不可登录的用户名 -->
+awk -F: '$1~/^[sr]/ && $NF~/nologin$/{print $1}' /etc/passwd
