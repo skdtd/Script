@@ -203,12 +203,11 @@ hello
 
 
 
-# awk
-awk 'BEGIN{}
-## 以','为列分隔符
-## BEGIN{} 读取文件之前进行的操作
-## {}      读取文件满足前面条件时执行括号里内容
-## END{}   文件读取完毕后进行的操作
+# awk(https://www.jianshu.com/p/ea22c809ae9f)
+# 参数
+## -F           定义字段之间的分隔符
+## -f           从文件读取函数或者操作逻辑(可以定义多个)
+## -v           自定义参数(可以定义多个)
 cat << EOF | awk -F, 'BEGIN{start="file open"; end="end of file"; print start}NR>=2{print $2}END{print end}'
 > 001,tom
 > 002,lucy
@@ -229,10 +228,15 @@ RS                  指定换行标记默认, 默认:\n
 OFS                 输出每一行的字段时使用的分隔符, 默认:空格
 ORS                 输出每一行时使用的换号符号, 默认:\n
 FILENAME            显示数据所在文件名
+ARGC                命令行参数个数
+ARGV                命令行参数数组
+
+# 内建函数
 
 # awk取行
 /text1/             取包含text1的行
 /text1/,/text2/     取包含text1到包含text2之间的行,包括text1和text2
+NR==1,NR==5         取第一行到第5行
 
 # awk取列
 cat << EOF | awk -F, '{print $NF}'
@@ -261,5 +265,44 @@ EOF
 
 <!-- 示例: 取网卡IP -->
 ip a s eth0 | awk -F"[ /]+" -vORS='' 'BEGIN{print "eth0: "}NR==3{print $3}END{print "\n"}'
-<!-- 示例: 取/etc/passwd中以s或者r开头并且不可登录的用户名 -->
+<!-- 条件示例: 取/etc/passwd中以s或者r开头并且不可登录的用户名 -->
 awk -F: '$1~/^[sr]/ && $NF~/nologin$/{print $1}' /etc/passwd
+<!-- 变量示例: 求和 -->
+awk -F: 'BEGIN{sum = 0}{sum += $3}END{print sum}' /etc/passwd       # 在BEGIN声明变量
+awk -F: -v sum=0 '{sum += $3}END{print sum}' /etc/passwd            # 用-v声明变量
+awk -F: '{sum += $3}END{print sum}' /etc/passwd                     # 用-v声明变量, 数值变量第一次被使用初始化为0
+
+# awk数组(多用于数据统计)(delete关键字可以删除数组数据)
+awk 'BEGIN{arr[0]=1;arr[1]=2;for (i in arr) print "index: "i,"value: "arr[i]}'          # awk用数组遍历
+<!-- 统计示例: 统计每个域名访问总次数 -->
+cat << EOF | awk -F[/.\ ]+ '{bd[$2]+=$NF}END{for(i in bd)print i,bd[i]}' | sort -rnk2 |column -t     # sort -rnk r:逆序,n:数字,k:列数
+https://www.baidu.com/1.html    3
+https://www.baidu.com/3/1/index.html    2
+https://tools.baidu.com/3/2/1/index.html    6
+https://music.baidu.com/2/1.html    7
+https://tools.baidu.com/2.html  2
+https://maps.baidu.com/index.html   1
+https://www.baidu.com/3/3/index.html    5
+https://maps.baidu.com/2/index.html   9
+EOF
+<!-- for示例: 计算1到100的和 -->
+awk 'BEGIN{for(;i<=100;i++)sum+=i;print sum}'
+<!-- if示例: 显示不可bash登录的用户 -->
+awk -F: '{if($NF!~/bash$/)print $1}' /etc/passwd
+<!-- if示例: 显示用户可否bash登录 -->
+awk -F: '{if($NF!~/bash$/)print $1,"不可登录";else print $1,"可登录"}' /etc/passwd | column -t
+
+# awk循环(while)
+awk 'BEGIN{while(i<100)print i++}'
+# awk循环(do...while)
+awk 'BEGIN{do print i++;while(i<100)}'
+# awk判断(switch...case)
+awk -F"[:/]+" '{switch($NF){case "bash": print $1,"可登录";break;case "nologin": print $1,"不可登录";break;default: print $1,"其他类型"}}' /etc/passwd | column -t
+
+# awk流程控制关键字(break,continue,next)
+break:      结束当前循环
+continue:   跳过当次循环
+next:       跳过当条数据(即处理下一行数据,严格来说不属于循环控制)
+
+# awk自定义函数(可以将自定义函数写到文件中用-f读取)
+awk 'function custom(){print "I am custom function"}BEGIN{custom()}'
