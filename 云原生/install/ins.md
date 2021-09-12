@@ -53,7 +53,7 @@ sysctl -p
 
 
 
-# 修改limit
+# 修改limit(提高服务器并发)
 ulimit -SHn 65535
 sed -i '$c* soft nofile 655360\n* hard nofile 131072\n* soft nproc 655350\n* hard nproc 655350\n* soft memlock unlimited\n* hard memlock unlimited\n\n# End of file' /etc/security/limits.conf
 
@@ -82,6 +82,72 @@ yum install vim wget git jq psmisc net-tools yum-utils device-mapper-persistent-
 # 安装ipvs,替换iptables作为kube-proxy的实现
 mkdir ${INSTMP}/ipvs
 yum install ipvsadm ipset sysstat conntrack libseccomp -y --downloadonly --downloaddir=${INSTMP}/ipvs
+## 所有节点配置ipvs模块,执行以下命令，在内核4.19+版本改为nf_conntrack， 4.18下改为nf_conntrack_ipv4
+modprobe -- ip_vs
+modprobe -- ip_vs_rr
+modprobe -- ip_vs_wrr
+modprobe -- ip_vs_sh
+modprobe -- nf_conntrack
+## 修改ipvs配置，加入以下内容
+vi /etc/modules-load.d/ipvs.conf
+
+ip_vs
+ip_vs_lc
+ip_vs_wlc
+ip_vs_rr
+ip_vs_wrr
+ip_vs_lblc
+ip_vs_lblcr
+ip_vs_dh
+ip_vs_sh
+ip_vs_fo
+ip_vs_nq
+ip_vs_sed
+ip_vs_ftp
+ip_vs_sh
+nf_conntrack
+ip_tables
+ip_set
+xt_set
+ipt_set
+ipt_rpfilter
+ipt_REJECT
+ipip
+
+## 启动
+systemctl enable --now systemd-modules-load.service
+lsmod | grep -e ip_vs -e nf_conntrack
+
+tee /etc/sysctl.d/k8s.conf <<-'EOF'
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+fs.may_detach_mounts = 1
+vm.overcommit_memory=1
+net.ipv4.conf.all.route_localnet = 1
+
+vm.panic_on_oom=0
+fs.inotify.max_user_watches=89100
+fs.file-max=52706963
+fs.nr_open=52706963
+net.netfilter.nf_conntrack_max=2310720
+
+net.ipv4.tcp_keepalive_time = 600
+net.ipv4.tcp_keepalive_probes = 3
+net.ipv4.tcp_keepalive_intvl =15
+net.ipv4.tcp_max_tw_buckets = 36000
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_max_orphans = 327680
+net.ipv4.tcp_orphan_retries = 3
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_max_syn_backlog = 16768
+net.ipv4.ip_conntrack_max = 65536
+net.ipv4.tcp_timestamps = 0
+net.core.somaxconn = 16768
+EOF
+sysctl --system
+reboot
+lsmod | grep -e ip_vs -e nf_conntrack
 
 # 安装docker
 mkdir ${INSTMP}/docker
@@ -145,3 +211,9 @@ systemctl enable --now kube{let,ctl,-apiserver,-controller-manager,-scheduler,-p
 systemctl enable --now kubelet
 systemctl enable --now kube-apiserver
 systemctl enable --now kube-controller-manager
+
+
+
+
+
+
