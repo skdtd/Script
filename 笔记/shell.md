@@ -154,6 +154,7 @@ i       # insert  : 向指定的行或者每一行上面插入内容
 sed '$a hello world' file 向最后一行之后添加hello world
 sed '3i hello world' file 在第3行前面追加hello world
 sed '4c hello world' file 将第4行替换成hello world
+sed '/^hi/c hello world' file 将第4行替换成hello world      # 可以以正则为条件搜索
 ## 改
 格式: s###g s///g s@@@g 中间格式只要没有特殊含义可以随意
 g: 全局匹配, 不加g则只替换每行第一个匹配到的元素
