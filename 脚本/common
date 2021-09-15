@@ -1,0 +1,66 @@
+#!/bin/bash
+################################################
+#
+# 通过yum仅下载rpm包用于分发, 通过yum install安装
+# example:
+#   yumd vim  =>  yum install --downloadonly --downloaddir=~/package/pkg
+#                 生成vim.log记录所有下载的包
+#
+################################################
+function yumd(){
+    DOWNLOADPATH="${HOME}/package/pkg/"
+    for pkg in $@
+    do
+        LOGPATH="${HOME}/package/${pkg}.log"
+        yum install --downloadonly --downloaddir=${DOWNLOADPATH} ${pkg} | tee ${LOGPATH}
+        if [[ $(grep -E "(No package)|(Nothing to do)" ${LOGPATH}) ]];then
+            rm -f ${LOGPATH}
+        else
+            TEXT=$(awk '{if($0~"^=+$"){flg=1}if($0~"^Total.*size"){flg=0;print $0}if(flg==1){print $0}}' ${LOGPATH})
+            echo "${TEXT}" > ${LOGPATH}
+        fi
+    done
+}
+
+################################################
+#
+# 检查当前进程是否双重启动, 如果进程已经在运行则退出当前进程
+#
+################################################
+function doubleCheck(){
+    local checkitem="$0"
+    local let procCnt=$(ps -A --format='%p%P%C%x%a' --width 2048 -w --sort pid \
+                | grep "$checkitem" \
+                | grep -v grep \
+                | grep -v " -c sh " \
+                | grep -v "$$" \
+                | grep -c sh \
+                | awk '{printf("%d",$1)}'
+    )
+    if [[ ${procCnt} -gt 0 ]];then
+        echo -e "\033[;32m$(basename $0)\033[0m" "is running, this operation will be suspended"
+        exit 1;
+    fi
+}
+
+##########################################
+#
+# 彩色字(颜色自行调试)
+# cecho <pattern> [text]
+# example:
+#   cecho 0019 $@  =>  echo -e -n "\033[0;41;39m$@\033[0m"
+# pattern   : 4位数字
+#   第一位: 为"0"代表不换行, 等于"echo -n", 
+#   第二位: 文本效果, 0-9可选
+#   第三位: 文字颜色, 0-9可选
+#   第四位: 背景颜色, 0-9可选
+#
+##########################################
+function cecho(){
+    KEYS=$1
+    shift
+    ECHOCMD="echo"
+    [[ ${KEYS:0:1} == '0' ]] && ECHOCMD=$ECHOCMD" -n "
+    read EFFECT FONTCOLOR BACKCOLOR <<< "${KEYS:1:1} ${KEYS:2:1} ${KEYS:3:1}"
+    ${ECHOCMD} -e "\033[${EFFECT};4${BACKCOLOR};3${FONTCOLOR}m$@\033[0m"
+}

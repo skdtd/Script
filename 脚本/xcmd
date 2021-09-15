@@ -1,24 +1,4 @@
-#!/bin/bash
-
-##########################################
-#
-# 彩色字(颜色自行调试)
-# colorEcho <pattern> [text]
-# pattern   : 4位数字
-#   第一位: 为"0"代表不换行, 等于"echo -n"
-#   第二位: 文本效果, 0-9可选
-#   第三位: 文字颜色, 0-9可选
-#   第四位: 背景颜色, 0-9可选
-#
-##########################################
-colorEcho(){
-    KEYS=$1
-    shift
-    ECHOCMD="echo"
-    [[ ${KEYS:0:1} == '0' ]] && ECHOCMD=$ECHOCMD" -n "
-    read EFFECT FONTCOLOR BACKCOLOR <<< "${KEYS:1:1} ${KEYS:2:1} ${KEYS:3:1}"
-    ${ECHOCMD} -e "\033[${EFFECT};4${BACKCOLOR};3${FONTCOLOR}m$@\033[0m"
-}
+#!/bin/sh
 
 ##########################################
 #

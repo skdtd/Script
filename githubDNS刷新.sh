@@ -15,7 +15,7 @@ echo IP获取完毕
 sed -i "/.*github.*/d" '/mnt/c/Windows/System32/drivers/etc/hosts'
 
 # 写入Windows的hosts 
-# todu 没写入权限
+# todo 没写入权限
 paste -d " " ${IP} ${SITE} >> '/mnt/c/Windows/System32/drivers/etc/hosts'
 
 # 删除临时文件
