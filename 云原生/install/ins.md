@@ -217,3 +217,241 @@ systemctl enable --now kube-controller-manager
 
 
 
+# 创建证书机构(ca根配置)
+mkdir -p /etc/kubernetes/pki
+tee /etc/kubernetes/pki/ca-config.json <<-'EOF'
+{
+    "signing": {
+        "default": {
+            "expiry": "87600h"
+        },
+        "profiles": {
+            "server": {
+                "expiry": "87600h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth"
+                ]
+            },
+            "client": {
+                "expiry": "87600h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "client auth"
+                ]
+            },
+            "peer": {
+                "expiry": "87600h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth",
+                    "client auth"
+                ]
+            },
+            "kubernetes": {
+                "expiry": "87600h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth",
+                    "client auth"
+                ]
+            },
+            "etcd": {
+                "expiry": "87600h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth",
+                    "client auth"
+                ]
+            }
+        }
+    }
+}
+EOF
+# 提交证书申请
+tee /etc/kubernetes/pki/ca-csr.json <<-'EOF'
+{
+  "CN": "kubernetes",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CN",
+      "ST": "Beijing",
+      "L": "Beijing",
+      "O": "Kubernetes",
+      "OU": "Kubernetes"
+    }
+  ],
+  "ca": {
+    "expiry": "87600h"
+  }
+}
+EOF
+
+# 初始化ca机构(测试)
+cfssl gencert -initca ca-csr.json | cfssljson -bare ca -
+
+
+# ETCD推荐资源配置
+https://etcd.io/docs/v3.5/op-guide/hardware/#example-hardware-configurations
+
+# etcd证书配置
+tee /etc/kubernetes/pki/etcd/etcd-ca-csr.json <<-'EOF'
+{
+  "CN": "etcd",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CN",
+      "ST": "Beijing",
+      "L": "Beijing",
+      "O": "etcd",
+      "OU": "etcd"
+    }
+  ],
+  "ca": {
+    "expiry": "87600h"
+  }
+}
+EOF
+# 生成etcd根证书
+cfssl gencert -initca etcd-ca-csr.json | cfssljson -bare /etc/kubernetes/pki/etcd/ca -
+
+
+# etcd证书申请
+tee /etc/kubernetes/pki/etcd-test.json <<-'EOF'
+{
+    "CN": "etcd-test",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "hosts": [  
+        "127.0.0.1",
+        "k8s-master1",
+        "k8s-master2",
+        "k8s-master3",
+        "192.168.0.10",
+        "192.168.0.11",
+        "192.168.0.12"
+    ],
+    "names": [
+        {
+            "C": "CN",
+            "L": "beijing",
+            "O": "etcd",
+            "ST": "beijing",
+            "OU": "System"
+        }
+    ]
+}
+EOF
+# 签发itdachang的etcd证书
+cfssl gencert \
+   -ca=/etc/kubernetes/pki/etcd/ca.pem \
+   -ca-key=/etc/kubernetes/pki/etcd/ca-key.pem \
+   -config=/etc/kubernetes/pki/ca-config.json \
+   -profile=etcd \
+   etcd-test.json | cfssljson -bare /etc/kubernetes/pki/etcd/etcd
+
+
+# 把生成的etcd证书，复制给其他机器
+for i in k8s-master2 k8s-master3;do scp -r /etc/kubernetes/pki/etcd root@$i:/etc/kubernetes/pki;done
+
+# 创建配置文件(高可用)
+mkdir -p /etc/etcd
+tee /etc/etcd/etcd.yaml <<-'EOF'
+name: 'etcd-master3'  #每个机器可以写自己的域名,不能重复
+data-dir: /var/lib/etcd
+wal-dir: /var/lib/etcd/wal
+snapshot-count: 5000
+heartbeat-interval: 100
+election-timeout: 1000
+quota-backend-bytes: 0
+listen-peer-urls: 'https://192.168.0.12:2380'  # 本机ip+2380端口，代表和集群通信
+listen-client-urls: 'https://192.168.0.12:2379,http://127.0.0.1:2379' #改为自己的
+max-snapshots: 3
+max-wals: 5
+cors:
+initial-advertise-peer-urls: 'https://192.168.0.12:2380' # 自己的ip
+advertise-client-urls: 'https://192.168.0.12:2379'  # 自己的ip
+discovery:
+discovery-fallback: 'proxy'
+discovery-proxy:
+discovery-srv:
+initial-cluster: 'etcd-master1=https://192.168.0.10:2380,etcd-master2=https://192.168.0.11:2380,etcd-master3=https://192.168.0.12:2380' # 这里不一样,初始化引导所有节点
+initial-cluster-token: 'etcd-k8s-cluster'
+initial-cluster-state: 'new'
+strict-reconfig-check: false
+enable-v2: true
+enable-pprof: true
+proxy: 'off'
+proxy-failure-wait: 5000
+proxy-refresh-interval: 30000
+proxy-dial-timeout: 1000
+proxy-write-timeout: 5000
+proxy-read-timeout: 0
+# 证书配置
+client-transport-security:
+  cert-file: '/etc/kubernetes/pki/etcd/etcd.pem'
+  key-file: '/etc/kubernetes/pki/etcd/etcd-key.pem'
+  client-cert-auth: true
+  trusted-ca-file: '/etc/kubernetes/pki/etcd/ca.pem'
+  auto-tls: true
+peer-transport-security:
+  cert-file: '/etc/kubernetes/pki/etcd/etcd.pem'
+  key-file: '/etc/kubernetes/pki/etcd/etcd-key.pem'
+  peer-client-cert-auth: true
+  trusted-ca-file: '/etc/kubernetes/pki/etcd/ca.pem'
+  auto-tls: true
+debug: false
+log-package-levels:
+log-outputs: [default]
+force-new-cluster: false
+EOF
+
+
+# 作成etcd服务自启动
+
+
+
+
+> 测试etcd访问
+
+```sh
+# 查看etcd集群状态
+etcdctl --endpoints="192.168.0.10:2379,192.168.0.11:2379,192.168.0.12:2379" --cacert=/etc/kubernetes/pki/etcd/ca.pem --cert=/etc/kubernetes/pki/etcd/etcd.pem --key=/etc/kubernetes/pki/etcd/etcd-key.pem  endpoint status --write-out=table
+
+# 以后测试命令
+export ETCDCTL_API=3
+HOST_1=192.168.0.10
+HOST_2=192.168.0.11
+HOST_3=192.168.0.12
+ENDPOINTS=$HOST_1:2379,$HOST_2:2379,$HOST_3:2379
+
+## 导出环境变量，方便测试，参照https://github.com/etcd-io/etcd/tree/main/etcdctl
+export ETCDCTL_DIAL_TIMEOUT=3s
+export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.pem
+export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/etcd.pem
+export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/etcd-key.pem
+export ETCDCTL_ENDPOINTS=$HOST_1:2379,$HOST_2:2379,$HOST_3:2379
+# 自动用环境变量定义的证书位置
+etcdctl  member list --write-out=table
+
+#如果没有环境变量就需要如下方式调用
+etcdctl --endpoints=$ENDPOINTS --cacert=/etc/kubernetes/pki/etcd/ca.pem --cert=/etc/kubernetes/pki/etcd/etcd.pem --key=/etc/kubernetes/pki/etcd/etcd-key.pem member list --write-out=table
+
+
+## 更多etcdctl命令，https://etcd.io/docs/v3.4/demo/#access-etcd
+```
