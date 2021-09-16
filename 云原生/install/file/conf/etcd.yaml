@@ -1,22 +1,22 @@
-name: 'etcd-master3'  #每个机器可以写自己的域名,不能重复
+name: 'os3'  #每个机器可以写自己的域名,不能重复
 data-dir: /var/lib/etcd
 wal-dir: /var/lib/etcd/wal
 snapshot-count: 5000
 heartbeat-interval: 100
 election-timeout: 1000
 quota-backend-bytes: 0
-listen-peer-urls: 'https://192.168.0.12:2380'  # 本机ip+2380端口，代表和集群通信
-listen-client-urls: 'https://192.168.0.12:2379,http://127.0.0.1:2379' #改为自己的
+listen-peer-urls: 'https://192.168.100.103:2380'  # 本机ip+2380端口，代表和集群通信
+listen-client-urls: 'https://192.168.100.103:2379,http://127.0.0.1:2379' #改为自己的
 max-snapshots: 3
 max-wals: 5
 cors:
-initial-advertise-peer-urls: 'https://192.168.0.12:2380' #自己的ip
-advertise-client-urls: 'https://192.168.0.12:2379'  #自己的ip
+initial-advertise-peer-urls: 'https://192.168.100.103:2380' #自己的ip
+advertise-client-urls: 'https://192.168.100.103:2379'  #自己的ip
 discovery:
 discovery-fallback: 'proxy'
 discovery-proxy:
 discovery-srv:
-initial-cluster: 'etcd-master1=https://192.168.0.10:2380,etcd-master2=https://192.168.0.11:2380,etcd-master3=https://192.168.0.12:2380' #这里不一样
+initial-cluster: 'os1=https://192.168.100.101:2380,os2=https://192.168.100.102:2380,os3=https://192.168.100.103:2380' #这里不一样
 initial-cluster-token: 'etcd-k8s-cluster'
 initial-cluster-state: 'new'
 strict-reconfig-check: false

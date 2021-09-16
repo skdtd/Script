@@ -9,6 +9,7 @@
 ################################################
 function yumd(){
     DOWNLOADPATH="${HOME}/package/pkg/"
+    [[ -d ${DOWNLOADPATH} ]] || mkdir -p ${DOWNLOADPATH}
     for pkg in $@
     do
         LOGPATH="${HOME}/package/${pkg}.log"

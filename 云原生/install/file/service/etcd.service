@@ -1,6 +1,6 @@
 [Unit]
 Description=Etcd Service
-Documentation=https://etcd.io/docs/v3.4/op-guide/clustering/
+Documentation=https://etcd.io/docs/latest/op-guide/clustering/
 After=network.target
 
 [Service]

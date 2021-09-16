@@ -38,18 +38,13 @@ setenforce 0 && sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/sysconfig/s
 swapoff -a && sysctl -w vm.swappiness=0 && sed -ri 's/.*swap.*/#&/' /etc/fstab
 
 # 修改流量转发(有则修改,无则添加)
-CMD='grep -q "^${key}" /etc/sysctl.conf && sed -i "s/^${key}.*/${key}=1/" /etc/sysctl.conf || echo "${key}=1" >> /etc/sysctl.conf'
-cat << EOF | while read key; do eval "$CMD";done
-net.ipv4.ip_forward
-net.bridge.bridge-nf-call-ip6tables
-net.bridge.bridge-nf-call-iptables
-net.ipv6.conf.all.disable_ipv6
-net.ipv6.conf.default.disable_ipv6
-net.ipv6.conf.lo.disable_ipv6
-net.ipv6.conf.all.forwarding
-EOF
 
-sysctl -p
+/etc/sysctl.d/k8s.conf
+
+sysctl --system
+
+
+
 
 
 
@@ -284,8 +279,8 @@ tee /etc/kubernetes/pki/ca-csr.json <<-'EOF'
   "names": [
     {
       "C": "CN",
-      "ST": "Beijing",
-      "L": "Beijing",
+      "ST": "Shanghai",
+      "L": "Shanghai",
       "O": "Kubernetes",
       "OU": "Kubernetes"
     }
@@ -304,7 +299,7 @@ cfssl gencert -initca ca-csr.json | cfssljson -bare ca -
 https://etcd.io/docs/v3.5/op-guide/hardware/#example-hardware-configurations
 
 # etcd证书配置
-tee /etc/kubernetes/pki/etcd/etcd-ca-csr.json <<-'EOF'
+tee /etc/kubernetes/pki/etcd-ca-csr.json <<-'EOF'
 {
   "CN": "etcd",
   "key": {
@@ -314,8 +309,8 @@ tee /etc/kubernetes/pki/etcd/etcd-ca-csr.json <<-'EOF'
   "names": [
     {
       "C": "CN",
-      "ST": "Beijing",
-      "L": "Beijing",
+      "ST": "Shanghai",
+      "L": "Shanghai",
       "O": "etcd",
       "OU": "etcd"
     }
@@ -339,19 +334,19 @@ tee /etc/kubernetes/pki/etcd-test.json <<-'EOF'
     },
     "hosts": [  
         "127.0.0.1",
-        "k8s-master1",
-        "k8s-master2",
-        "k8s-master3",
-        "192.168.0.10",
-        "192.168.0.11",
-        "192.168.0.12"
+        "os1",
+        "os2",
+        "os3",
+        "192.168.100.101",
+        "192.168.100.102",
+        "192.168.100.103"
     ],
     "names": [
         {
             "C": "CN",
-            "L": "beijing",
+            "L": "shanghai",
             "O": "etcd",
-            "ST": "beijing",
+            "ST": "shanghai",
             "OU": "System"
         }
     ]
@@ -367,63 +362,14 @@ cfssl gencert \
 
 
 # 把生成的etcd证书，复制给其他机器
-for i in k8s-master2 k8s-master3;do scp -r /etc/kubernetes/pki/etcd root@$i:/etc/kubernetes/pki;done
+for i in os2 os3;do scp -r /etc/kubernetes/pki/etcd root@$i:/etc/kubernetes/pki;done
 
 # 创建配置文件(高可用)
 mkdir -p /etc/etcd
-tee /etc/etcd/etcd.yaml <<-'EOF'
-name: 'etcd-master3'  #每个机器可以写自己的域名,不能重复
-data-dir: /var/lib/etcd
-wal-dir: /var/lib/etcd/wal
-snapshot-count: 5000
-heartbeat-interval: 100
-election-timeout: 1000
-quota-backend-bytes: 0
-listen-peer-urls: 'https://192.168.0.12:2380'  # 本机ip+2380端口，代表和集群通信
-listen-client-urls: 'https://192.168.0.12:2379,http://127.0.0.1:2379' #改为自己的
-max-snapshots: 3
-max-wals: 5
-cors:
-initial-advertise-peer-urls: 'https://192.168.0.12:2380' # 自己的ip
-advertise-client-urls: 'https://192.168.0.12:2379'  # 自己的ip
-discovery:
-discovery-fallback: 'proxy'
-discovery-proxy:
-discovery-srv:
-initial-cluster: 'etcd-master1=https://192.168.0.10:2380,etcd-master2=https://192.168.0.11:2380,etcd-master3=https://192.168.0.12:2380' # 这里不一样,初始化引导所有节点
-initial-cluster-token: 'etcd-k8s-cluster'
-initial-cluster-state: 'new'
-strict-reconfig-check: false
-enable-v2: true
-enable-pprof: true
-proxy: 'off'
-proxy-failure-wait: 5000
-proxy-refresh-interval: 30000
-proxy-dial-timeout: 1000
-proxy-write-timeout: 5000
-proxy-read-timeout: 0
-# 证书配置
-client-transport-security:
-  cert-file: '/etc/kubernetes/pki/etcd/etcd.pem'
-  key-file: '/etc/kubernetes/pki/etcd/etcd-key.pem'
-  client-cert-auth: true
-  trusted-ca-file: '/etc/kubernetes/pki/etcd/ca.pem'
-  auto-tls: true
-peer-transport-security:
-  cert-file: '/etc/kubernetes/pki/etcd/etcd.pem'
-  key-file: '/etc/kubernetes/pki/etcd/etcd-key.pem'
-  peer-client-cert-auth: true
-  trusted-ca-file: '/etc/kubernetes/pki/etcd/ca.pem'
-  auto-tls: true
-debug: false
-log-package-levels:
-log-outputs: [default]
-force-new-cluster: false
-EOF
-
+tee /etc/etcd/etcd.yaml << EOF
 
 # 作成etcd服务自启动
-
+/usr/lib/systemd/system/etcd.service
 
 
 
@@ -431,17 +377,18 @@ EOF
 
 ```sh
 # 查看etcd集群状态
-etcdctl --endpoints="192.168.0.10:2379,192.168.0.11:2379,192.168.0.12:2379" --cacert=/etc/kubernetes/pki/etcd/ca.pem --cert=/etc/kubernetes/pki/etcd/etcd.pem --key=/etc/kubernetes/pki/etcd/etcd-key.pem  endpoint status --write-out=table
+etcdctl --endpoints="192.168.100.101:2379,192.168.100.102:2379,192.168.100.103:2379" --cacert=/etc/kubernetes/pki/etcd/ca.pem --cert=/etc/kubernetes/pki/etcd/etcd.pem --key=/etc/kubernetes/pki/etcd/etcd-key.pem  endpoint status --write-out=table
+
 
 # 以后测试命令
 export ETCDCTL_API=3
-HOST_1=192.168.0.10
-HOST_2=192.168.0.11
-HOST_3=192.168.0.12
+HOST_1=k8s-01
+HOST_2=k8s-02
+HOST_3=k8s-03
 ENDPOINTS=$HOST_1:2379,$HOST_2:2379,$HOST_3:2379
 
 ## 导出环境变量，方便测试，参照https://github.com/etcd-io/etcd/tree/main/etcdctl
-export ETCDCTL_DIAL_TIMEOUT=3s
+export ETCDCTL_DIAL_TIMEOUT=120s
 export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.pem
 export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/etcd.pem
 export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/etcd-key.pem
@@ -453,5 +400,5 @@ etcdctl  member list --write-out=table
 etcdctl --endpoints=$ENDPOINTS --cacert=/etc/kubernetes/pki/etcd/ca.pem --cert=/etc/kubernetes/pki/etcd/etcd.pem --key=/etc/kubernetes/pki/etcd/etcd-key.pem member list --write-out=table
 
 
-## 更多etcdctl命令，https://etcd.io/docs/v3.4/demo/#access-etcd
+## 更多etcdctl命令，https://etcd.io/docs/latest/demo/#access-etcd
 ```
