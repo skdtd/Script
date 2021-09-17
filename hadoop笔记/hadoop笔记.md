@@ -11,7 +11,8 @@
    </br><b>`EOF`</b>
 4. 开放22端口用于远程连接
 5. 节点间免密
-   </br><b>`for i in ${hosts};do ssh-copy-id ${user}@$i;done`</b>
+   </br><b>`ssh-keygen -q -N "" -f `</b>
+   </br><b>`for i in ${hosts};do ssh-copy-id -i  ${user}@$i;done`</b>
 ## hadoop生产集群搭建
 > 通过<b>`--downloadonly --downloaddir=${path}`</b>来只下载安装包 之后统一分发安装
 1. 创建模板

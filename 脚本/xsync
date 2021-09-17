@@ -1,0 +1,86 @@
+#!/bin/bash
+
+
+cecho(){
+    KEYS=$1
+    shift
+    ECHOCMD="echo"
+    [[ ${KEYS:0:1} == '0' ]] && ECHOCMD=$ECHOCMD" -n "
+    read EFFECT FONTCOLOR BACKCOLOR <<< "${KEYS:1:1} ${KEYS:2:1} ${KEYS:3:1}"
+    ${ECHOCMD} -e "\033[${EFFECT};4${BACKCOLOR};3${FONTCOLOR}m$@\033[0m"
+}
+
+
+usage(){
+    cat <<< """Usage:
+    $(basename $0) -f {hosts_file} [dir|files]
+    示例: 
+        $(basename $0) -f hosts_list test_file
+        $(basename $0) root@192.168.100.101 test_file
+    
+    注意: 
+        1. 未指定目标节点文件位置时使用本地文件绝对路径
+        2. 确保目标节点目录存在
+        3. 不指定目标用户时使用当前本地执行用户
+
+    -q, --quiet         不显示消息
+    -h, --help          帮助信息
+    -d, --delete        删除远程节点不存在于本地的多余文件
+    -f, --hosts_file    连接多个节点时的节点列表文件
+    -i, --identity_file 连接时使用的ssh密钥文件
+    -p, --password      连接时使用的密码(需要sshpass)
+    -t, --timeout       超时时间
+    """
+    cecho 1019 $@
+    exit 1
+}
+
+
+xsync(){
+
+    [[ $(which rsync 2> /dev/null) ]] || usage "$0 error: module 'rsync' not found"
+
+    local TEMP=$(getopt -o qhdf:i:p:t: --long quiet,help,delete,hosts_file:,identity_file:,password:,timeout: -n 'error' -- "$@")
+    [[ $? != 0 ]] && usage "Terminating..." >&2 
+    # 参数重排
+    eval set -- "$TEMP"
+    local RSY_PARS
+    local SSh_PARS
+    local HOSTLIST
+    local PASSWD
+    # 参数定义
+    while true ; do
+        case "$1" in
+            -q|--quiet)         RSY_PARS+=" -q"; 
+                shift 1 ;;
+            -h|--help)          usage; 
+                shift 1 ;;
+            -d|--delete)        RSY_PARS+=" --delete"; 
+                shift 1 ;;
+            -f|--hosts_file)    HOSTLIST=$2; 
+                shift 2 ;;
+            -i|--identity_file) SSh_PARS+=" -i $2";
+                shift 2 ;;
+            -p|--password)      
+                [[ $(which sshpass 2> /dev/null) ]] || usage "$0 error: Parameter '-p | --password' requires the 'sshpass' module to be used, but this module was not found.";
+                PASSWD="$2";
+                shift 2 ;;
+            -t|--timeout)       RSY_PARS+=" --timeout=$2";
+                shift 2 ;;
+            --) shift ; break ;;
+            *) usage "Internal error!" ;;
+        esac
+    done
+    local FILE=$(readlink -e $1)
+    # 做个循环,接受后续所有参数作为目标节点
+    local TARGET=$2
+    TARGET=(${TARGET//:/ })
+    local HOST=${TARGET[0]}
+    local FILEPATH=${TARGET[1]:=${FILE}}
+    
+
+    #  rsync -zcrPa test root@192.168.100.102:~
+}
+
+
+xsync $@

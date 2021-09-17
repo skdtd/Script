@@ -1,4 +1,4 @@
-#!/bin/absh
+#!/bin/bash
 
 TOTAL=50
 

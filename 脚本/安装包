@@ -46,3 +46,9 @@ K8S_URL='https://dl.k8s.io/'
 K8S_VERSION=$(curl -sSL https://dl.k8s.io/release/stable.txt)
 curl -LOC - ${K8S_URL}${K8S_VERSION}/kubernetes-server-linux-amd64.tar.gz
 tar -xvf kubernetes-server-linux-amd64.tar.gz --strip-components=3 -C /usr/local/bin kubernetes/server/bin/kube{let,ctl,-apiserver,-controller-manager,-scheduler,-proxy}
+
+## JDK(清华源)
+JDK_VERSION=8
+JDK_URL="https://mirrors.tuna.tsinghua.edu.cn/AdoptOpenJDK/${JDK_VERSION}/jdk/x64/linux/"
+JDK_PKG=$(curl -skS ${JDK_URL} | grep -Po 'OpenJDK.*?-jdk.*?tar.gz' | sort | uniq | head -1)
+curl -kLOC - ${JDK_URL}${JDK_PKG}
