@@ -1,0 +1,6 @@
+#!/bin/bash
+template(){
+cat <<<"""\
+heloo
+"""
+}
