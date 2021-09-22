@@ -1,6 +1,54 @@
 #!/bin/bash
-template(){
-cat <<<"""\
-heloo
-"""
+
+
+cecho(){
+    KEYS=$1
+    shift
+    ECHOCMD="echo"
+    [[ ${KEYS:0:1} == '0' ]] && ECHOCMD=$ECHOCMD" -n "
+    read EFFECT FONTCOLOR BACKCOLOR <<< "${KEYS:1:1} ${KEYS:2:1} ${KEYS:3:1}"
+    ${ECHOCMD} -e "\033[${EFFECT};4${BACKCOLOR};3${FONTCOLOR}m$@\033[0m"
+}
+
+
+usage(){
+    cat <<< """Usage:
+    $(basename $0) -f {hosts_file} [dir|files]
+    示例: 
+        $(basename $0) -f hosts_list test_file
+        $(basename $0) root@192.168.100.101 test_file
+    
+    注意: 
+        1. 未指定目标节点文件位置时使用本地文件绝对路径
+        2. 确保目标节点目录存在
+        3. 不指定目标用户时使用当前本地执行用户
+
+    -q, --quiet         不显示消息
+    -h, --help          帮助信息
+    -d, --delete        删除远程节点不存在于本地的多余文件
+    -f, --hosts_file    连接多个节点时的节点列表文件
+    -i, --identity_file 连接时使用的ssh密钥文件
+    -p, --password      连接时使用的密码(需要sshpass)
+    -t, --timeout       超时时间
+    """
+    cecho 1019 $@
+    exit 1
+}
+
+check_env(){
+    [[ $(which rsync >& /dev/null) ]] || usage "$0 error: module 'rsync' not found"
+    [[ $(which inotifywait >& /dev/null) ]] || usage "$0 error: module 'inotify-tools' not found"
+}
+
+add_repos(){
+tee /etc/yum.repos.d/CentOS-infra.repo <<-'EOF'
+[infra]
+name=CentOS-$releasever - infra - mirrors.tuna.tsinghua.edu.cn
+failovermethod=priority
+baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos/7.9.2009/infra/x86_64/infra-common
+        https://mirrors.aliyun.com/centos/7.9.2009/infra/x86_64/infra-common
+        https://download.fedoraproject.org/pub/epel/7/x86_64
+gpgcheck=0
+enabled=0
+EOF
 }

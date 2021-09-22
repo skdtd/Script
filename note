@@ -1,0 +1,46 @@
+WSL文档
+https://docs.microsoft.com/zh-cn/windows/wsl/
+
+linux终端设置
+export PS1='[\t \# \u@\h \W]\$ '
+
+
+inotify
+# 添加基础库
+tee /etc/yum.repos.d/CentOS-infra.repo <<-'EOF'
+[infra]
+name=CentOS-$releasever - infra - mirrors.tuna.tsinghua.edu.cn
+failovermethod=priority
+baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos/7.9.2009/infra/x86_64/infra-common
+        https://mirrors.aliyun.com/centos/7.9.2009/infra/x86_64/infra-common
+        https://download.fedoraproject.org/pub/epel/7/x86_64
+gpgcheck=0
+enabled=0
+EOF
+yum repo-pkgs infra list # 查看所有可以安装的包
+yum --enablerepo=infra install inotify-tools
+yum --enablerepo=infra install jq
+
+
+modify
+attrib
+close_write
+moved_to
+create
+delete
+delete_self
+
+#!/bin/bash
+
+inotifywait -mrqe attrib,close_write,move,create,delete --timefmt '%Y-%m-%d_%T' --format '%T %w%f %e' /root/ /opt/ |\
+while read T F E
+do
+        echo date: $T file: $F event: $E
+done
+
+
+同步发送的操作
+CLOSE_WRITE ATTRIB CREATE MOVED_TO
+
+同步删除的操作
+DELETE MOVED_FROM
