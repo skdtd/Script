@@ -30,8 +30,13 @@ create
 delete
 delete_self
 
-#!/bin/bash
 
+
+
+
+[[ -z $(grep 'inotifywait' /proc/*/comm) ]] && echo 123
+#!/bin/bash
+                  modify,create,delete,attrib,close_write,move
 inotifywait -mrqe attrib,close_write,move,create,delete --timefmt '%Y-%m-%d_%T' --format '%T %w%f %e' /root/ /opt/ |\
 while read T F E
 do
@@ -44,3 +49,11 @@ CLOSE_WRITE ATTRIB CREATE MOVED_TO
 
 同步删除的操作
 DELETE MOVED_FROM
+
+https://blog.csdn.net/gbnet/article/details/8645525
+############################################################################
+1、 如果对数据安全性要求低，建议选择rsync server模式，未启用压缩，启用数据校验，修改TCP/IP协议字段号为29。
+2、 如果对数据安全性要求高，建议选择SSH隧道加密传输，arcfour弱加密算法，未启用压缩，启用数据校验，修改TCP/IP协议字段号为29
+3、 如果是第一次推送数据，建议加上-W参数，意思是不检查文件更新，直接传送整个文件，这样可以减少文件检测时间，节省程序总运行时间。
+4、 如果想进一步节省程序运行时间，可在使用checksum的同时，加上—block-size=512这个参数（默认是700）。数值建议是500以上，并且是2的N次方，最大不超过2048。推荐512，1024，2048这三个值。
+5、 在传输数据时，为了不影响线上正常业务，建议根据线上实际情况，通过—bwlimit=KPBS参数对带宽进行限制

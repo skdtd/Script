@@ -36,8 +36,10 @@ usage(){
 }
 
 check_env(){
-    [[ $(which rsync >& /dev/null) ]] || usage "$0 error: module 'rsync' not found"
-    [[ $(which inotifywait >& /dev/null) ]] || usage "$0 error: module 'inotify-tools' not found"
+    for m in $@
+    do
+        [[ $(which ${m} >& /dev/null) ]] || usage "$0 error: module ${m} not found"
+    done    
 }
 
 add_repos(){
@@ -52,3 +54,52 @@ gpgcheck=0
 enabled=0
 EOF
 }
+
+
+
+
+#!/bin/bash
+src=/data/                           # 需要同步的源路径
+des=data                             # 目标服务器上 rsync --daemon 发布的名称，rsync --daemon这里就不做介绍了，网上搜一下，比较简单。
+rsync_passwd_file=/etc/rsyncd.passwd            # rsync验证的密码文件
+ip1=192.168.0.18                    # 目标服务器1
+ip2=192.168.0.19                    # 目标服务器2
+user=root                            # rsync --daemon定义的验证用户名
+cd ${src}                            
+
+local TARGET=$@
+local LINENO=0
+inotifywait -mrqe attrib,close_write,move,create,delete --timefmt '%Y-%m-%d_%T' --format '%T %w%f %e' "${TARGET[@]}" |\
+while read TIMESTAMP FILE EVENT
+do
+    let LINENO++
+    echo date: $T file: $F event: $E
+done
+
+
+        INO_EVENT=$(echo $file | awk '{print $1}')      # 把inotify输出切割 把事件类型部分赋值给INO_EVENT
+        INO_FILE=$(echo $file | awk '{print $2}')       # 把inotify输出切割 把文件路径部分赋值给INO_FILE
+        echo "-------------------------------$(date)------------------------------------"
+        echo $file
+        if [[ $INO_EVENT =~ 'CREATE' ]] || [[ $INO_EVENT =~ 'MODIFY' ]] || [[ $INO_EVENT =~ 'CLOSE_WRITE' ]] || [[ $INO_EVENT =~ 'MOVED_TO' ]]         # 判断事件类型
+        then
+                echo 'CREATE or MODIFY or CLOSE_WRITE or MOVED_TO'
+                rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip1}::${des} &&
+                rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip2}::${des}
+        fi
+        if [[ $INO_EVENT =~ 'DELETE' ]] || [[ $INO_EVENT =~ 'MOVED_FROM' ]]
+        then
+                echo 'DELETE or MOVED_FROM'
+                rsync -avzR --delete --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip1}::${des} &&
+                rsync -avzR --delete --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip2}::${des}
+        fi
+        if [[ $INO_EVENT =~ 'ATTRIB' ]]
+        then
+                echo 'ATTRIB'
+                if [ ! -d "$INO_FILE" ]
+                then
+                        rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip1}::${des} &&         
+                        rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip2}::${des}
+                fi
+        fi
+done
