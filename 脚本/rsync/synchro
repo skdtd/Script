@@ -58,48 +58,48 @@ EOF
 
 
 
-#!/bin/bash
-src=/data/                           # 需要同步的源路径
-des=data                             # 目标服务器上 rsync --daemon 发布的名称，rsync --daemon这里就不做介绍了，网上搜一下，比较简单。
-rsync_passwd_file=/etc/rsyncd.passwd            # rsync验证的密码文件
-ip1=192.168.0.18                    # 目标服务器1
-ip2=192.168.0.19                    # 目标服务器2
-user=root                            # rsync --daemon定义的验证用户名
-cd ${src}                            
-
-local TARGET=$@
-local LINENO=0
-inotifywait -mrqe attrib,close_write,move,create,delete --timefmt '%Y-%m-%d_%T' --format '%T %w%f %e' "${TARGET[@]}" |\
-while read TIMESTAMP FILE EVENT
+rm -rf temp.cache
+{
+    inotifywait -mrqe attrib,close_write,move,create,delete --format '%w%f %e' /opt/ | \
+    while read LINE
+    do
+        echo $LINE
+        echo $LINE >> temp.cache
+    done
+} &
+jobs -p > pid
+while true
 do
-    let LINENO++
-    echo date: $T file: $F event: $E
+    UUID=$(cat /proc/sys/kernel/random/uuid)
+    echo "${UUID}" >> temp.cache
+    # 删除操作时同一个目录多个文件删除会触发多次对同一个父目录的同步
+    sed -n '1,/${UUID}/p' temp.cache | awk '{list[$1]=$2}END{for(i in list){print i,list[i]}}' | \
+    while read FILENAME EVENT
+    do
+        if [[ $EVENT =~ 'CREATE' ]] || [[ $EVENT =~ 'CLOSE_WRITE' ]] || [[ $EVENT =~ 'MOVED_TO' ]] ||  [[ $EVENT =~ 'ATTRIB' ]];then
+            rsync -qca ${FILENAME} root@192.168.100.102:${FILENAME}
+        fi
+        if [[ $EVENT =~ 'DELETE' ]] || [[ $EVENT =~ 'MOVED_FROM' ]];then
+            rsync -qca --delete $(dirname ${FILENAME})/ root@192.168.100.102:$(dirname ${FILENAME})/
+        fi
+    done
+    sed -i '1,/${UUID}/d' temp.cache
+    sleep 10
 done
+# grep 'inotifywait' /proc/*/comm | awk -F/ '{system("kill "$3)}'
+CREATE|CLOSE_WRITE|MOVED_TO|ATTRIB
+DELETE|MOVED_FROM
 
 
-        INO_EVENT=$(echo $file | awk '{print $1}')      # 把inotify输出切割 把事件类型部分赋值给INO_EVENT
-        INO_FILE=$(echo $file | awk '{print $2}')       # 把inotify输出切割 把文件路径部分赋值给INO_FILE
-        echo "-------------------------------$(date)------------------------------------"
-        echo $file
-        if [[ $INO_EVENT =~ 'CREATE' ]] || [[ $INO_EVENT =~ 'MODIFY' ]] || [[ $INO_EVENT =~ 'CLOSE_WRITE' ]] || [[ $INO_EVENT =~ 'MOVED_TO' ]]         # 判断事件类型
-        then
-                echo 'CREATE or MODIFY or CLOSE_WRITE or MOVED_TO'
-                rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip1}::${des} &&
-                rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip2}::${des}
-        fi
-        if [[ $INO_EVENT =~ 'DELETE' ]] || [[ $INO_EVENT =~ 'MOVED_FROM' ]]
-        then
-                echo 'DELETE or MOVED_FROM'
-                rsync -avzR --delete --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip1}::${des} &&
-                rsync -avzR --delete --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip2}::${des}
-        fi
-        if [[ $INO_EVENT =~ 'ATTRIB' ]]
-        then
-                echo 'ATTRIB'
-                if [ ! -d "$INO_FILE" ]
-                then
-                        rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip1}::${des} &&         
-                        rsync -avzcR --password-file=${rsync_passwd_file} $(dirname ${INO_FILE}) ${user}@${ip2}::${des}
-                fi
-        fi
-done
+sed -n '1,/${UUID}/p' log | awk '{list[$1]=$2}END{for(i in list){print i,list[i]}}' | 
+awk 'function dir(dirname $2){if($2~/CREATE|CLOSE_WRITE|MOVED_TO|ATTRIB/){CRE=$1" "CRE}if($2~/DELETE|MOVED_FROM/){DEL=$1" "DEL}}END{print CRE"\n"DEL}'
+
+
+sed -n '1,/${UUID}/p' log | awk '{list[$1]=$2}END{for(i in list){print i,list[i]}}' | awk '{$2~/DELETE|MOVED_FROM/?DEL=$1" "DEL:CRE=$1" "CRE}END{print CRE"\n"DEL}'
+
+
+
+
+
+
+
