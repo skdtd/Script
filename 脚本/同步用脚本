@@ -1,0 +1,43 @@
+#!/bin/bash
+
+MONITOR_FLAG
+getUUID(){
+    echo $(</proc/sys/kernel/random/uuid)
+}
+
+exit 1
+getPipeline(){
+    local PIPE=.$(getUUID)
+    mkfifo $PIPE
+    readlink -f $PIPE
+}
+
+run(){
+    # 二重检查
+    [[ -n $(grep "$1" pid | awk -F"[:]" '{print $2}') ]] && exit 1
+    $2
+}
+
+monitorThead(){
+    {
+    local PIPE=$(getPipeline)
+    inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' /opt/ | \
+    while read LINE
+    do
+        # 通过循环写入管道,用cat可以将积攒的数据一次性取出
+        echo $LINE >> ${PIPE}
+        # 调用处理进程,通知处理进程去指定管道获取数据
+        handlerThead ${PIPE}
+    done
+    } &
+}
+handlerThead(){
+    # 唤醒后停顿一会再启动线程,防止没写完就开始处理,
+    sleep 1
+    {
+        while read DIRNAME EVENT FILENAME
+        do
+
+        done < $1
+    } &
+}
