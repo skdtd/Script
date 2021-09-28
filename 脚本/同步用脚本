@@ -1,43 +1,113 @@
 #!/bin/bash
 
-MONITOR_FLAG
-getUUID(){
-    echo $(</proc/sys/kernel/random/uuid)
+
+
+DELAYTIME=3000          # 毫秒;      TODO: 大量IO操作导致实际等待时间远大于设定时间
+TIMER=$(mktemp)
+HOSTS="root@192.168.100.102"
+
+
+# 更新计数器
+updateTimer(){
+    echo ${DELAYTIME} > ${TIMER}
 }
 
-exit 1
-getPipeline(){
-    local PIPE=.$(getUUID)
-    mkfifo $PIPE
-    readlink -f $PIPE
+# 延迟启动函数
+timer(){
+    {
+        updateTimer
+        while [[ -f ${TIMER} ]]
+        do
+            CD=$(cat ${TIMER})
+            [[ "${CD}" > 0 ]] && echo $(($CD-1)) > ${TIMER} || rm -f ${TIMER}
+            usleep 1
+        done
+        $@ # todo 测试下参数怎么传的
+    } &
 }
 
-run(){
-    # 二重检查
-    [[ -n $(grep "$1" pid | awk -F"[:]" '{print $2}') ]] && exit 1
-    $2
+delrsync(){
+    for HOST in HOSTS
+    do
+        rsync -qac --rsync-path="rm -rf $@ && rsync" "$@" ${HOST}:
+    done
 }
+
+modrsync(){
+    for HOST in HOSTS
+    do
+        rsync -qac --rsync-path="mkdir -p $1 && rsync" "$2" ${HOST}:"$1"
+    done
+}
+
+# 设置为全局函数提供给awk使用
+export -f delrsync modrsync
+
+headleThead(){
+    awk '$3==""{next}
+    $2~/DELETE|MOVED_FROM/
+        {dlist=dlist" "$1$3}
+    $2~/CREATE|CLOSE_WRITE|MOVED_TO|ATTRIB/ && index(mlist[$1],$3)==0
+        {mlist[$1]=$3" "mlist[$1]}
+    END{
+        dlist!=""{system("delrsync "dlist)};
+        for(dir in mlist){
+            system("modrsync "dir" "mlist[dir])
+        }
+    }' $1
+}
+
+readThead(){
+    {
+        local TEMP=$(mktemp)
+        # while可以一次性全部读出,而不会分段读取
+        while read LINE
+        do
+            echo $LINE >> ${TEMP} && [[ -f ${TIMER} ]] # 在此处确认是否执行后续
+        done < fifo
+    } &
+}
+
 
 monitorThead(){
     {
-    local PIPE=$(getPipeline)
-    inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' /opt/ | \
-    while read LINE
-    do
-        # 通过循环写入管道,用cat可以将积攒的数据一次性取出
-        echo $LINE >> ${PIPE}
-        # 调用处理进程,通知处理进程去指定管道获取数据
-        handlerThead ${PIPE}
-    done
+        local PIPE=/tmp/.$(cat /proc/sys/kernel/random/uuid)
+        mkfifo $PIPE
+        inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' /opt/ | \
+        while read LINE
+        do
+            # 通过循环写入管道,用cat可以将积攒的数据一次性取出
+            echo $LINE >> ${PIPE}
+        done
     } &
 }
-handlerThead(){
-    # 唤醒后停顿一会再启动线程,防止没写完就开始处理,
-    sleep 1
-    {
-        while read DIRNAME EVENT FILENAME
-        do
 
-        done < $1
-    } &
+monitorThead
+
+
+
+
+# 数组 连续add时候效率太低
+arr=()
+
+add(){
+    arr=(${arr[@]} $@)
+}
+
+pop(){
+    local INDEX=$(echo ${!arr[@]} | awk '{print $1}')
+    echo ${arr[${INDEX}]} && unset arr[${INDEX}]
+}
+
+get(){
+    local INDEX=$(echo ${!arr[@]} | awk '{print $NF}')
+    echo ${arr[${INDEX}]} && unset arr[${INDEX}]
+}
+
+list(){
+    case $1 in
+    "l") echo ${#arr[@]}    ;;
+    "n") echo ${!arr[@]}    ;;
+    *)   echo ${arr[@]}     ;;
+    esac
 }
