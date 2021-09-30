@@ -2,30 +2,13 @@
 
 
 
-DELAYTIME=3000          # 毫秒;      TODO: 大量IO操作导致实际等待时间远大于设定时间
-TIMER=$(mktemp)
+DELAYTIME=1                     # 延迟启动(秒): 超过这个时间没有新的数据改动就触发同步操作
+MONIT_DIR="/opt"
 HOSTS="root@192.168.100.102"
 
-
-# 更新计数器
-updateTimer(){
-    echo ${DELAYTIME} > ${TIMER}
-}
-
-# 延迟启动函数
-timer(){
-    {
-        updateTimer
-        while [[ -f ${TIMER} ]]
-        do
-            CD=$(cat ${TIMER})
-            [[ "${CD}" > 0 ]] && echo $(($CD-1)) > ${TIMER} || rm -f ${TIMER}
-            usleep 1
-        done
-        $@ # todo 测试下参数怎么传的
-    } &
-}
-
+#####################################################################
+# 文件删除
+#####################################################################
 delrsync(){
     for HOST in HOSTS
     do
@@ -33,6 +16,10 @@ delrsync(){
     done
 }
 
+
+#####################################################################
+# 文件修改
+#####################################################################
 modrsync(){
     for HOST in HOSTS
     do
@@ -40,11 +27,15 @@ modrsync(){
     done
 }
 
-# 设置为全局函数提供给awk使用
-export -f delrsync modrsync
-
+#####################################################################
+# 将LOG采集处理后交由rsync同步
+#####################################################################
 headleThead(){
-    awk '$3==""{next}
+    # while可以一次性全部读出,而不会分段读取
+    while read -t ${DELAYTIME} LINE
+    do
+        echo $LINE
+    done <&1023 | awk '$3==""{next}
     $2~/DELETE|MOVED_FROM/
         {dlist=dlist" "$1$3}
     $2~/CREATE|CLOSE_WRITE|MOVED_TO|ATTRIB/ && index(mlist[$1],$3)==0
@@ -54,60 +45,38 @@ headleThead(){
         for(dir in mlist){
             system("modrsync "dir" "mlist[dir])
         }
-    }' $1
+    }'
 }
 
-readThead(){
-    {
-        local TEMP=$(mktemp)
-        # while可以一次性全部读出,而不会分段读取
-        while read LINE
-        do
-            echo $LINE >> ${TEMP} && [[ -f ${TIMER} ]] # 在此处确认是否执行后续
-        done < fifo
-    } &
+# 设置为全局变量,使之成为回调函数
+export -f delrsync modrsync headleThead
+
+#####################################################################
+# 防止二重启动
+#####################################################################
+run(){
+    local TOKEN=$1
+    local CMD=$2
+    shift 2
+    [ "${FLOCKER}" != "${TOKEN}" ] && exec env FLOCKER="${TOKEN}" flock -en "${TOKEN}" -c "${CMD}" "$@" || :
 }
 
-
+#####################################################################
+# 监控线程
+#####################################################################
 monitorThead(){
-    {
-        local PIPE=/tmp/.$(cat /proc/sys/kernel/random/uuid)
-        mkfifo $PIPE
-        inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' /opt/ | \
-        while read LINE
-        do
-            # 通过循环写入管道,用cat可以将积攒的数据一次性取出
-            echo $LINE >> ${PIPE}
-        done
-    } &
+    local UUID=$(cat /proc/sys/kernel/random/uuid)      # 用于管道名和二重启动识别标志
+    local PIPE=/tmp/.${UUID}
+    mkfifo $PIPE
+    exec 1023<>$PIPE
+    rm -rf $PIPE
+    inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' "${MONIT_DIR}" | \
+    while read LINE
+    do
+        echo $LINE >&1023 && run ${UUID}
+    done
 }
 
 monitorThead
 
 
-
-
-# 数组 连续add时候效率太低
-arr=()
-
-add(){
-    arr=(${arr[@]} $@)
-}
-
-pop(){
-    local INDEX=$(echo ${!arr[@]} | awk '{print $1}')
-    echo ${arr[${INDEX}]} && unset arr[${INDEX}]
-}
-
-get(){
-    local INDEX=$(echo ${!arr[@]} | awk '{print $NF}')
-    echo ${arr[${INDEX}]} && unset arr[${INDEX}]
-}
-
-list(){
-    case $1 in
-    "l") echo ${#arr[@]}    ;;
-    "n") echo ${!arr[@]}    ;;
-    *)   echo ${arr[@]}     ;;
-    esac
-}
