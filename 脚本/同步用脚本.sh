@@ -4,7 +4,7 @@
 
 DELAYTIME=1                     # 延迟启动(秒): 超过这个时间没有新的数据改动就触发同步操作
 MONIT_DIR="/opt"
-HOSTS="root@192.168.100.102"
+HOSTS="root@192.168.100.102 root@192.168.100.103"
 
 #####################################################################
 # 文件删除
@@ -32,23 +32,23 @@ modrsync(){
 #####################################################################
 headleThead(){
     # while可以一次性全部读出,而不会分段读取
-    while read -t ${DELAYTIME} LINE
+    while read -t ${DELAYTIME} LINE1
     do
-        echo $LINE
+        echo $LINE1
     done <&1023 | awk '$3==""{next}
     $2~/DELETE|MOVED_FROM/
         {dlist=dlist" "$1$3}
     $2~/CREATE|CLOSE_WRITE|MOVED_TO|ATTRIB/ && index(mlist[$1],$3)==0
         {mlist[$1]=$3" "mlist[$1]}
     END{
-        dlist!=""{system("delrsync "dlist)};
+        {print dlist};
         for(dir in mlist){
-            system("modrsync "dir" "mlist[dir])
+            print dir mlist[dir]
         }
     }'
 }
 
-# 设置为全局变量,使之成为回调函数
+# 回调函数
 export -f delrsync modrsync headleThead
 
 #####################################################################
@@ -73,7 +73,7 @@ monitorThead(){
     inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' "${MONIT_DIR}" | \
     while read LINE
     do
-        echo $LINE >&1023 && run ${UUID}
+        echo $LINE >&1023 && run ${UUID} headleThead
     done
 }
 
