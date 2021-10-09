@@ -25,6 +25,32 @@ function yumd(){
 
 ################################################
 #
+# 从选项中获取参数
+#
+################################################
+getParameter(){
+    # 参数收集
+    local TEMP=$(getopt -o rd:k:v:f:  --long reverse,delimiter,key:,value:,file: -n 'error' -- "$@")
+    if [ $? != 0 ] ; then usage "Terminating..." >&2 ; fi
+    # 参数重排
+    eval set -- "$TEMP"
+    # 参数定义
+    while true ; do
+        case "$1" in
+            -r|--reverse)   local REVERSE=on     ; shift 2 ;;
+            -d|--delimiter) local DELIMITER=$2   ; shift 2 ;;
+            -k|--key)       local KEY=$2         ; shift 2 ;;
+            -v|--value)     local VALUE=$2       ; shift 2 ;;
+            -f|--file)      local FILE=$2        ; shift 2 ;;
+            --) shift ; break ;;
+            *) usage "Internal error!" ;;
+        esac
+    done
+}
+
+
+################################################
+#
 # 检查当前进程是否双重启动, 如果进程已经在运行则退出当前进程
 #
 ################################################
@@ -44,7 +70,7 @@ function doubleCheck(){
     fi
 }
 
-##########################################
+################################################
 #
 # 彩色字(颜色自行调试)
 # cecho <pattern> [text]
@@ -56,7 +82,7 @@ function doubleCheck(){
 #   第三位: 文字颜色, 0-9可选
 #   第四位: 背景颜色, 0-9可选
 #
-##########################################
+################################################
 function cecho(){
     KEYS=$1
     shift
@@ -64,4 +90,33 @@ function cecho(){
     [[ ${KEYS:0:1} == '0' ]] && ECHOCMD=$ECHOCMD" -n "
     read EFFECT FONTCOLOR BACKCOLOR <<< "${KEYS:1:1} ${KEYS:2:1} ${KEYS:3:1}"
     ${ECHOCMD} -e "\033[${EFFECT};4${BACKCOLOR};3${FONTCOLOR}m$@\033[0m"
+}
+
+################################################
+#
+# kl: 显示当前终端启动的所有进程
+# kk: 杀死当前终端所有启动的进程
+#
+################################################
+kl(){
+    ps -f | grep -vE '\-bash|ps \-f'
+}
+kk(){
+    ps -f | grep -vE '\-bash|ps \-f' | awk 'NR>1{system("kill -9 "$2)}'
+}
+
+################################################
+#
+# 进度条
+# progress <step> <text>
+#
+################################################
+progress(){
+    TOTAL=50
+    SPEED=$(( $1 * ${TOTAL} / 100 ))
+    TEXT=$2
+    [[ ${SPEED} -ge ${TOTAL} ]] && SPEED=${TOTAL} && TEXT='Completion!\n'
+    L=$(perl -E "say'=' x ${SPEED}")
+    R=$(perl -E "say' ' x $((${TOTAL} - ${SPEED}))")
+    echo -ne "\r[${L}${R}]${TEXT}"
 }

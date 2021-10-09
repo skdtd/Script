@@ -1,0 +1,142 @@
+#!/bin/bash
+# rsync Github: https://github.com/inotify-tools/inotify-tools/releases/latest
+# rsyncd.conf: https://download.samba.org/pub/rsync/rsyncd.conf.5
+#####################################################################
+# 帮助
+#####################################################################
+usage(){
+    cat <<< """Usage:
+        $(basename $0) <dir> <host>
+        $(basename $0) -h <host1> -h <host2> -d <dir>
+        For example: 
+            $(basename $0) /opt root@192.168.100.101
+            $(basename $0) -h root@192.168.100.101 -h root@192.168.100.102 -d /opt -d /etc
+
+        -q, --quiet             未实装
+        -t, --timeout           启动延迟时间(超过指定时间未发生更改,则启动同步)
+        -h, --host              同步的对象主机
+        -d, --monit-dir         同步的本地文件夹
+        -i, --identity-file     SSH密钥文件
+        """
+}
+
+#####################################################################
+# 防止二重启动
+#####################################################################
+run(){
+    local TONKE=$1
+    local CMD=$2
+    shift 2
+    [ "${FLOCKER}" != "${TONKE}" ] && exec env FLOCKER="${TONKE}" flock -en "${TONKE}" -c "${CMD}" "$@" || :
+}
+
+#####################################################################
+# 打印时间戳
+#####################################################################
+timestamp(){
+    echo "$(date +%Y-%m-%d\ %T) $@"
+}
+
+#####################################################################
+# 执行rsync操作
+#####################################################################
+rsyncInvoke(){
+    case $1 in
+    "D")
+        shift 1
+        for HOST in ${HOST_LIST[@]}
+        do
+            rsync -qac --rsync-path="rm -rf $* && rsync" ${HOST}:
+        done
+    ;;
+    "M")
+        shift 1; DIR=$1;shift 1
+        for HOST in ${HOST_LIST[@]}
+        do
+            rsync -qac -e "ssh ${RSH}" --rsync-path="mkdir -p ${DIR} && rsync" "$@" ${HOST}:"${DIR}"
+        done
+    ;;
+    esac
+}
+
+#####################################################################
+# LOG预处理
+#####################################################################
+headleThead(){
+    # while可以一次性全部读出,而不会分段读取
+    while read -t 1 LINE
+    do
+        echo $LINE
+    done <&1023 | awk '$3==""{next}
+    sub($1$3" ","",dlist)
+    sub($1$3" ","",mlist[$1])
+    $2~/DELETE|MOVED_FROM/{dlist=$1$3" "dlist}
+    $2~/CREATE|CLOSE_WRITE|MOVED_TO|ATTRIB/{mlist[$1]=$1$3" "mlist[$1]}
+    END{
+        if(dlist != ""){print "D",dlist};
+        for(dir in mlist){if(mlist[dir] != ""){print "M",dir,mlist[dir]}};
+    }' | xargs -P3 -L1 -I {} bash -c 'rsyncInvoke $@' _ {}  # 最高3线程并发
+}
+
+#####################################################################
+# 监控变动
+#####################################################################
+monitorThead(){
+    # 创建管道
+    local UUID=$(cat /proc/sys/kernel/random/uuid)
+    local PIPE=/tmp/.${UUID}
+    mkfifo $PIPE
+    exec 1023<>$PIPE              # 1023: 文件描述符(需统一)
+    rm -rf $PIPE
+    # 开始监控
+    inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' ${MONIT_DIR[@]} | \
+    while read LINE
+    do
+        [[ -z ${QUIET} ]] && timestamp $LINE
+        echo $LINE >&1023 
+        run ${LOCK} headleThead & # 启动后台进程在延迟过后处理管道中的数据
+    done
+}
+
+
+##############################################################################################################
+# 主逻辑开始
+##############################################################################################################
+
+# 设置为全局函数(回调)
+export -f rsyncInvoke headleThead timestamp
+
+# 参数收集
+TEMP=$(getopt -o qt:h:d:i:h  --long quiet,timeout:,host:,monit-dir:,identity-file:help -n 'error' -- "$@")
+if [ $? != 0 ] ; then echo "Terminating..." >&2 ; fi
+# 参数重排
+eval set -- "$TEMP"
+# 参数定义
+while true ; do
+    case "$1" in
+        -q|--quiet)         QUIET=1                     ; shift 1 ;;
+        -t|--timeout)       DELAYTIME=$2                ; shift 2 ;;
+        -h|--host)          HOST_LIST="${HOST_LIST} $2" ; shift 2 ;;
+        -d|--monit-dir)     MONIT_DIR="${MONIT_DIR} $2" ; shift 2 ;;
+        -i|--identity-file) RSH=" -i $2"                ; shift 2 ;;
+        -h|--help)          usage                       ; exit  0 ;;
+        --) shift ; break ;;
+        *) usage; echo "Internal error!"; exit 1 ;;
+    esac
+done
+
+# 未用'-'指定参数时
+# 参数个数大于1, 第一个参数作为MONIT_DIR, 第二个参数作为HOST_LIST, 第三个参数起全部丢弃
+[[ $# > 1 ]] && MONIT_DIR=${MONIT_DIR:=$1} && HOST_LIST=${HOST_LIST:=$2}
+# 参数个数等于1, 当前执行目录作为MONIT_DIR, 参数作为HOST_LIST
+[[ $# == 1 ]] && MONIT_DIR=${MONIT_DIR:=$(pwd)} && HOST_LIST=${HOST_LIST:=$1}
+
+# HOST_LIST未被设定时退出
+[[ -z ${HOST_LIST} ]] && echo "$(basename $0) error: No host specified to transfer" && exit 1
+
+LOCK=$(readlink -e $(basename $0))  # 二重启动锁
+
+export HOST_LIST
+export DELAYTIME=${DELAYTIME:=1} RSH # 延迟启动(秒): 超过这个时间没有新的数据改动就触发同步操作
+
+monitorThead
