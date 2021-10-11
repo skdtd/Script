@@ -46,3 +46,10 @@ print std
 std = commands.getstatus('tt')
 print std
 ```
+
+
+
+
+# coding=UTF-8
+# windows下设置虚拟环境
+# set PATH=C:\Users\zhaozhiy\Desktop\wk\wrexcel\venv\Scripts;%PATH%;"%SystemRoot%\System32\chcp.com"

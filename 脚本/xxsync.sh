@@ -1,6 +1,7 @@
 #!/bin/bash
 # rsync Github: https://github.com/inotify-tools/inotify-tools/releases/latest
 # rsyncd.conf: https://download.samba.org/pub/rsync/rsyncd.conf.5
+# inotify-tools: https://github.com/inotify-tools/inotify-tools/wiki
 #####################################################################
 # 帮助
 #####################################################################
@@ -139,5 +140,15 @@ LOCK=$(readlink -e $(basename $0))  # 二重启动锁
 
 export HOST_LIST
 export DELAYTIME=${DELAYTIME:=1} RSH # 延迟启动(秒): 超过这个时间没有新的数据改动就触发同步操作
+
+# 全量更新
+for HOST in ${HOST_LIST[@]}
+do
+    for DIR in ${MONIT_DIR[@]}
+    do
+        rsync -qac -e "ssh ${RSH}" ${DIR} ${HOST}:${DIR}
+        rsync -qac -e "ssh ${RSH}" --delete ${DIR} ${HOST}:${DIR}
+    done
+done
 
 monitorThead
