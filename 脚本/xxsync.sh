@@ -6,17 +6,25 @@
 #####################################################################
 usage(){
     cat <<< """Usage:
+        基于rsync将指定目录的变更(增删改)自动同步到其他已经设置免密的节点相同目录
+
+        $(basename $0) <host>
         $(basename $0) <dir> <host>
-        $(basename $0) -h <host1> -h <host2> -d <dir>
+
+        同时监控多个目录或同步到多个节点时使用以下方式
+        $(basename $0) -t <host1> -t <host2> -m <dir1> -m <dir2>
+        $(basename $0) -t '<host1> <host2>' -m '<dir1> <dir2>'
+
         For example: 
             $(basename $0) /opt root@192.168.100.101
-            $(basename $0) -h root@192.168.100.101 -h root@192.168.100.102 -d /opt -d /etc
+            $(basename $0) -t root@192.168.100.101 -t root@192.168.100.102 -m /opt -m /etc
 
-        -q, --quiet             未实装
-        -t, --timeout           启动延迟时间(超过指定时间未发生更改,则启动同步)
-        -h, --host              同步的对象主机
-        -d, --monit-dir         同步的本地文件夹
-        -i, --identity-file     SSH密钥文件
+        -q, --quiet             不显示变更记录
+        -d, --delaytime         启动延迟(秒;默认:1秒)(超过指定时间未发生更改,则启动同步线程)
+        -t, --target            同步的对象主机([USER]@HOST)
+        -m, --monit-dir         监控的本地文件夹(默认:.)
+        -i, --identity-file     连接的密钥文件
+        -h, --help              帮助信息
         """
 }
 
@@ -31,13 +39,6 @@ run(){
 }
 
 #####################################################################
-# 打印时间戳
-#####################################################################
-timestamp(){
-    echo "$(date +%Y-%m-%d\ %T) $@"
-}
-
-#####################################################################
 # 执行rsync操作
 #####################################################################
 rsyncInvoke(){
@@ -46,7 +47,7 @@ rsyncInvoke(){
         shift 1
         for HOST in ${HOST_LIST[@]}
         do
-            rsync -qac --rsync-path="rm -rf $* && rsync" ${HOST}:
+            rsync -qac -e "ssh ${RSH}" --rsync-path="rm -rf $* && rsync" ${HOST}:
         done
     ;;
     "M")
@@ -64,7 +65,7 @@ rsyncInvoke(){
 #####################################################################
 headleThead(){
     # while可以一次性全部读出,而不会分段读取
-    while read -t 1 LINE
+    while read -t ${DELAYTIME} LINE
     do
         echo $LINE
     done <&1023 | awk '$3==""{next}
@@ -86,28 +87,28 @@ monitorThead(){
     local UUID=$(cat /proc/sys/kernel/random/uuid)
     local PIPE=/tmp/.${UUID}
     mkfifo $PIPE
-    exec 1023<>$PIPE              # 1023: 文件描述符(需统一)
+    exec 1023<>$PIPE
     rm -rf $PIPE
     # 开始监控
     inotifywait -mrqe attrib,close_write,move,create,delete --format '%w %e %f' ${MONIT_DIR[@]} | \
     while read LINE
     do
-        [[ -z ${QUIET} ]] && timestamp $LINE
+        [[ -z ${QUIET} ]] && echo "$(date +%Y-%m-%d\ %T) $LINE"
         echo $LINE >&1023 
-        run ${LOCK} headleThead & # 启动后台进程在延迟过后处理管道中的数据
+        run ${LOCK} headleThead &
     done
 }
 
 
 ##############################################################################################################
-# 主逻辑开始
+# 主流程
 ##############################################################################################################
 
 # 设置为全局函数(回调)
-export -f rsyncInvoke headleThead timestamp
+export -f rsyncInvoke headleThead
 
 # 参数收集
-TEMP=$(getopt -o qt:h:d:i:h  --long quiet,timeout:,host:,monit-dir:,identity-file:help -n 'error' -- "$@")
+TEMP=$(getopt -o qd:t:d:i:h  --long quiet,delaytime:,target:,monit-dir:,identity-file:help -n 'error' -- "$@")
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; fi
 # 参数重排
 eval set -- "$TEMP"
@@ -115,9 +116,9 @@ eval set -- "$TEMP"
 while true ; do
     case "$1" in
         -q|--quiet)         QUIET=1                     ; shift 1 ;;
-        -t|--timeout)       DELAYTIME=$2                ; shift 2 ;;
-        -h|--host)          HOST_LIST="${HOST_LIST} $2" ; shift 2 ;;
-        -d|--monit-dir)     MONIT_DIR="${MONIT_DIR} $2" ; shift 2 ;;
+        -d|--delaytime)     DELAYTIME=$2                ; shift 2 ;;
+        -t|--target)        HOST_LIST="${HOST_LIST} $2" ; shift 2 ;;
+        -m|--monit-dir)     MONIT_DIR="${MONIT_DIR} $2" ; shift 2 ;;
         -i|--identity-file) RSH=" -i $2"                ; shift 2 ;;
         -h|--help)          usage                       ; exit  0 ;;
         --) shift ; break ;;

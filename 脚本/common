@@ -28,7 +28,7 @@ function yumd(){
 # 从选项中获取参数
 #
 ################################################
-getParameter(){
+function getParameter(){
     # 参数收集
     local TEMP=$(getopt -o rd:k:v:f:  --long reverse,delimiter,key:,value:,file: -n 'error' -- "$@")
     if [ $? != 0 ] ; then usage "Terminating..." >&2 ; fi
@@ -94,14 +94,32 @@ function cecho(){
 
 ################################################
 #
+# 计时器
+# timer 函数名 函数的参数
+# 毫秒: ${COST::-6}ms
+# 微秒: ${COST::-3}μs
+# 纳秒: ${COST::-0}ns 
+#
+################################################
+function timer(){
+    local BEGIN=$(date +%s%N)
+    local FUNC=$1
+    shift; ${FUNC} $@
+    local END=$(date +%s%N)
+    local COST=$(($END-$BEGIN))
+    echo "Cost: ${COST::-3}ms"
+}
+
+################################################
+#
 # kl: 显示当前终端启动的所有进程
 # kk: 杀死当前终端所有启动的进程
 #
 ################################################
-kl(){
+function kl(){
     ps -f | grep -vE '\-bash|ps \-f'
 }
-kk(){
+function kk(){
     ps -f | grep -vE '\-bash|ps \-f' | awk 'NR>1{system("kill -9 "$2)}'
 }
 
@@ -111,7 +129,7 @@ kk(){
 # progress <step> <text>
 #
 ################################################
-progress(){
+function progress(){
     TOTAL=50
     SPEED=$(( $1 * ${TOTAL} / 100 ))
     TEXT=$2
