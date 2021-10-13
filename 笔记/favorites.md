@@ -4,11 +4,11 @@
 
 ### [netty](https://www.jianshu.com/p/b9f3f6a16911)
 
-### [正则表达式](https://mp.weixin.qq.com/s?__biz=MzU0NDg3NDg0Ng==&mid=2247483727&idx=1&sn=1fc19af2291177ac3c1a832c47392a3f&chksm=fb74c97ecc0340681bc54c97ceb7bba413da3f1ca6fc3a107bbdabe7eb9be144c261a6de347d&scene=21#wechat_redirect)
+### [正则表达式](https://mp.weixin.qq.com/s?__biz=MzI5OTI4OTY5NQ==&mid=2247485711&idx=1&sn=019030c653bffeb0968f9bf245b6a3a5)
 
 ### [linux运维](http://www.zsythink.net/)
 
-### [make文件](https://blog.csdn.net/baidu_38172402/article/details/88864517?utm_medium=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase)
+### [make文件](https://blog.csdn.net/baidu_38172402/article/details/88864517)
 
 ### [python包 源](https://www.lfd.uci.edu/~gohlke/pythonlibs/)
 
@@ -51,3 +51,7 @@
 ### [大数据相关博客](https://www.yuque.com/mayershexiaobin)
 
 ### [python进阶](https://blog.csdn.net/qq_27825451?type=blog)
+
+### [pyspark](https://codingdict.com/article/8880)
+
+### [Titanic乘客生存预测](https://github.com/cystanford/Titanic_Data)

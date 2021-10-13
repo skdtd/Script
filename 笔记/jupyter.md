@@ -1,23 +1,12 @@
-# 安装node.js
-```shell
-conda install nodejs -c conda-forge
-# 查看配置
-npm config ls -l # 详细
-npm config list # 简版
-# 设置代理
-npm config set proxy="http://localhost:8080"
-# 查看现有源
-npm config get registry
-# 设置淘宝源
-npm config set registry https://registry.npm.taobao.org
-# 更新
-npm update
+```bash
+# jupyter-notebook切换中文
+echo "export LANG='zh_CN.UTF8'" >> ~/.bashrc
+
+# jupyter-lab切换中文
+pip install jupyterlab-language-pack-zh-CN
 ```
 
-```bash
-# jupyter-notebook中文
-echo "export LANG='zh_CN.UTF8'" >> ~/.bashrc
-```
+
 
 ```python
 # jupyter-lab 配置
@@ -25,16 +14,39 @@ c.ServerApp.ip = '*'
 c.ServerApp.allow_remote_access = True
 c.ServerApp.root_dir = '/root/data/notebook'
 c.ServerApp.password = u'sha1:99cb284c7992:685e06fe4f24004b7ad704099915d8e840f7e564' # 117788
-c.ServerApp.password_required = True
+c.ServerApp.password_required = False
 c.ServerApp.quit_button = False
 c.ServerApp.allow_root = True
 c.ServerApp.open_browser = False
 ```
 
+# jupyter 作为服务()
+```bash
+touch /lib/systemd/system/jupyter.service # 贴入下面ini内容
+systemctl daemon-reload
+systemctl enabe --now jupyter
+```
+```ini
+[Unit]
+Description=Jupyter Lab
+
+[Service]
+Type=simple
+PIDFile=/run/jupyter.pid
+ExecStart=/opt/miniconda3/envs/jpy/bin/jupyter-lab --config=~/.jupyter/jupyter_lab_config.py
+User=root
+Group=root
+WorkingDirectory=/root/data/notebook
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
 
 # [安装jupyter](https://lyric.im/c/the-craft-of-selfteaching/T-appendix.jupyter-installation-and-setup)
 ```shell
-pip install jupyterlab 
+pip install jupyterlab
 ```
 
 # 如果pywin32出问题, 安装225版
