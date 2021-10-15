@@ -1,3 +1,4 @@
+# jupyter([conda-forge](https://anaconda.org/conda-forge/repo/installers))
 ```bash
 # jupyter-notebook切换中文
 echo "export LANG='zh_CN.UTF8'" >> ~/.bashrc
@@ -5,8 +6,6 @@ echo "export LANG='zh_CN.UTF8'" >> ~/.bashrc
 # jupyter-lab切换中文
 pip install jupyterlab-language-pack-zh-CN
 ```
-
-
 
 ```python
 # jupyter-lab 配置
@@ -20,7 +19,7 @@ c.ServerApp.allow_root = True
 c.ServerApp.open_browser = False
 ```
 
-# jupyter 作为服务()
+# jupyter 作为服务
 ```bash
 touch /lib/systemd/system/jupyter.service # 贴入下面ini内容
 systemctl daemon-reload
