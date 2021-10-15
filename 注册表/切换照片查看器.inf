@@ -1,0 +1,11 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultInstall]
+AddReg=WindowsPhotoViewer
+
+[WindowsPhotoViewer]
+hklm,"SOFTWARE\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations",".jpg",,"PhotoViewer.FileAssoc.Tiff"
+hklm,"SOFTWARE\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations",".jpeg",,"PhotoViewer.FileAssoc.Tiff"
+hklm,"SOFTWARE\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations",".png",,"PhotoViewer.FileAssoc.Tiff"
+hklm,"SOFTWARE\\Microsoft\\Windows Photo Viewer\\Capabilities\\FileAssociations",".bmp",,"PhotoViewer.FileAssoc.Tiff"
