@@ -1,4 +1,6 @@
 # jupyter([conda-forge](https://anaconda.org/conda-forge/repo/installers))
+
+## https://zhuanlan.zhihu.com/p/104143118
 ```bash
 # jupyter-notebook切换中文
 echo "export LANG='zh_CN.UTF8'" >> ~/.bashrc
