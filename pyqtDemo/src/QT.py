@@ -1,9 +1,9 @@
-from _typeshed import Self
 import sys
-from PyQt5.QtCore import QPoint
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QDesktopWidget, QMainWindow, QWidget, QDialog
 
+from PyQt5.QtCore import QPoint
+from PyQt5.QtGui import QFont, QIcon
+from PyQt5.QtWidgets import (QApplication, QDesktopWidget, QDialog,
+                             QMainWindow, QWidget)
 
 # ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@192.168.100.103
 
@@ -22,18 +22,26 @@ from PyQt5.QtWidgets import QApplication, QDesktopWidget, QMainWindow, QWidget, 
 class MainWin(QMainWindow):
     def __init__(self, parent=None):
         super(MainWin, self).__init__(parent)
+        self.initUI()
+
+    def initUI(self):
+        # 设置窗口属性(x,y,w,h)
+        self.setGeometry(100, 100, 300, 200)
+        # 设置标题
         self.setWindowTitle('APP')
-        self.resize(400, 300)
+        # 设置图标(mac下无法显示图标)
+        self.setWindowIcon(QIcon(''))
         self.status = self.statusBar()
         self.status.showMessage('I am Message!', 3000)
-        self.center()
+        # self.center()
 
     def center(self):
-        screen = QDesktopWidget().screenGeometry()
-        size = self.geometry()
-        w = (screen.width() - size.width()) / 2
-        h = (screen.height() - size.height()) / 2
-        self.move(int(w), int(h))
+        # screen = QDesktopWidget().screenGeometry()
+        # size = self.geometry()
+        # w = (screen.width() - size.width()) / 2
+        # h = (screen.height() - size.height()) / 2
+        # self.move(int(w), int(h))
+        self.setGeometry(100, 100, 200, 200)
 
 
 if __name__ == '__main__':
