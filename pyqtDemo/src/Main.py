@@ -18,9 +18,9 @@ from widgets.MainWindow import MainWindow
 # QMainWindow:  主窗口,可以包含菜单栏,工具栏和标题栏
 # QDialog:      对话框的基类,没有菜单栏,工具栏和标题栏
 # QWidget:
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)                        # 创建主应用程序
+    app.setApplicationName('APP')
     app.setWindowIcon(QIcon(''))                        # 设置应用图标
     mw = MainWindow()                                   # 创建主窗口
     mw.show()                                           # 显示窗口
