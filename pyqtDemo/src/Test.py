@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)                        # 创建主应用程序
-    app.setApplicationName('APP')
+    app.setApplicationName('APP')                       # 设置应用名称
     app.setWindowIcon(QIcon(''))                        # 设置应用图标
     mw = MainWindow()                                   # 创建主窗口
     mw.show()                                           # 显示窗口
