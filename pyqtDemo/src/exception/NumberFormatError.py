@@ -1,0 +1,2 @@
+class NumberFormatError(ValueError):
+    pass

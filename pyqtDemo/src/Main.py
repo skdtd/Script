@@ -1,4 +1,4 @@
-# Python API: https://www.riverbankcomputing.com/static/Docs/PyQt5/api/qtcore/qtcore-module.html
+# Python API: https://www.riverbankcomputing.com/static/Docs/PyQt5/module_index.html
 import sys
 
 from PyQt5.QtGui import QIcon

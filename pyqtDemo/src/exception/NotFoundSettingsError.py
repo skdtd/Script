@@ -1,0 +1,2 @@
+class NotFoundSettingsError(KeyError):
+    pass
