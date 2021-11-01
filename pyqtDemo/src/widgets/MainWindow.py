@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
         btn_LW = QPushButton('LableWindow')
         btn_LW.setToolTip('LableWindow')
         btn_LW.clicked.connect(self.lw.show)
+        
         btn_BW = QPushButton('BuddyWindow')
         btn_BW.setToolTip('BuddyWindow')
         btn_BW.clicked.connect(self.bw.show)
