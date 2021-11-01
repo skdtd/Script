@@ -5,6 +5,4 @@ def Singleton(cls):
         if cls not in _instance:
             _instance[cls] = cls(*args, **kargs)
         return _instance[cls]
-
-
     return _singleton

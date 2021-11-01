@@ -1,4 +1,5 @@
 # Python API: https://www.riverbankcomputing.com/static/Docs/PyQt5/module_index.html
+# 知乎pyqt5: https://www.zhihu.com/people/can-meng-zhong-de-che-xian/posts?page=5
 import sys
 
 from PyQt5.QtGui import QIcon

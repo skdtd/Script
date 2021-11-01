@@ -1,19 +1,21 @@
 import sys
 import threading
-from PyQt5.QtCore import QSettings
 
 from exception.ConstCaseError import ConstCaseError
 from exception.NotFoundSettingsError import NotFoundSettingsError
+from PyQt5.QtCore import QSettings
+from PyQt5.QtWidgets import QApplication
 
 
-class _Setting:
+class _Setting():
     _instance_lock = threading.Lock()
     _keys = [
-        "WIDTH", "HEGITH",
+        "WIDTH", "HEGITH", "x", "y"
     ]
 
-    def __init__(self) -> None:
-        self.organizationName = 'QTPYDEMO'
+    def __init__(self, app: QApplication) -> None:
+        # 注册表位置: HKEY_CURRENT_USER\Software\
+        self.organizationName = app.applicationName()
         self.GUI = QSettings(self.OrganizationName, 'GUI')
         self.CONFIG = QSettings(self.OrganizationName, 'CONFIG')
 
