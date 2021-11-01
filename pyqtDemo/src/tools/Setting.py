@@ -4,20 +4,16 @@ import threading
 from exception.ConstCaseError import ConstCaseError
 from exception.NotFoundSettingsError import NotFoundSettingsError
 from PyQt5.QtCore import QSettings
-from PyQt5.QtWidgets import QApplication
+
 
 
 class _Setting():
     _instance_lock = threading.Lock()
-    _keys = [
-        "WIDTH", "HEGITH", "x", "y"
-    ]
 
-    def __init__(self, app: QApplication) -> None:
+
+    def __init__(self) -> None:
         # 注册表位置: HKEY_CURRENT_USER\Software\
-        self.organizationName = app.applicationName()
-        self.GUI = QSettings(self.OrganizationName, 'GUI')
-        self.CONFIG = QSettings(self.OrganizationName, 'CONFIG')
+        pass
 
     # 单例
     def __new__(cls, *args, **kwargs):
@@ -31,11 +27,14 @@ class _Setting():
         if not name.isupper():  # 属性名全大写
             raise ConstCaseError(
                 "const name {0} is not all uppercase".format(name))
-        if name not in _Setting:  # 设置项检查
+        if name not in _Setting._keys:  # 设置项检查
             raise NotFoundSettingsError(
                 "The related setting named {0} could not be found".format(name))
 
         self.__dict__[name] = value
+
+    def push():
+        pass
 
 
 sys.modules[__name__] = _Setting()
