@@ -1,0 +1,2 @@
+class RejectInitializationError(Exception):
+    pass

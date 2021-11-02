@@ -1,0 +1,2 @@
+class RejectModifyConstError(Exception):
+    pass

@@ -8,6 +8,7 @@ class BuddyWindow(QDialog):
 
     def __init__(self, parent=None) -> None:
         super(BuddyWindow, self).__init__(parent)
+
         self.initUI()
 
     def initUI(self) -> None:
@@ -41,6 +42,12 @@ class BuddyWindow(QDialog):
         print(self.usernameLineEdit.text())
         print(self.passwordLineEdit.text())
         self.close()
+
+    def display(self):
+        self.usernameLineEdit.clear()
+        self.passwordLineEdit.clear()
+        self.show()
+
 
 if __name__ == '__main__':
     import sys

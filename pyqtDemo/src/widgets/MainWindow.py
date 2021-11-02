@@ -2,20 +2,17 @@ from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtWidgets import (QApplication, QDesktopWidget, QMainWindow, QPushButton,
                              QToolTip, QVBoxLayout, QWidget)
 
-try:
-    from widgets.BuddyWindow import BuddyWindow
-except ModuleNotFoundError:
+if __name__ == '__main__':
     from BuddyWindow import BuddyWindow
-try:
-    from widgets.LableWindow import LableWindow
-except ModuleNotFoundError:
     from LableWindow import LableWindow
+else:
+    from widgets.BuddyWindow import BuddyWindow
+    from widgets.LableWindow import LableWindow
+
 
 
 class MainWindow(QMainWindow):
-
     '''主窗口'''
-
     def __init__(self, parent=None) -> None:
         super(MainWindow, self).__init__(parent)
         self.lw = LableWindow()
@@ -35,11 +32,11 @@ class MainWindow(QMainWindow):
 
         btn_LW = QPushButton('LableWindow')
         btn_LW.setToolTip('LableWindow')
-        btn_LW.clicked.connect(self.lw.show)
+        btn_LW.clicked.connect(self.lw.showOrHide)
         
         btn_BW = QPushButton('BuddyWindow')
         btn_BW.setToolTip('BuddyWindow')
-        btn_BW.clicked.connect(self.bw.show)
+        btn_BW.clicked.connect(self.bw.display)
 
         layout = QVBoxLayout()                          # 初始化垂直布局
         layout.addWidget(btn_LW)                        # 向布局中添加按钮

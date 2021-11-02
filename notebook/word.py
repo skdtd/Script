@@ -19,9 +19,7 @@ def timer(text: str):
             end = datetime.now()
             print('%s: %s 時間: %s' % (text, datetime.strftime(end, '%Y-%m-%d %H:%M:%S'), str(end - start)))
             return obj
-
         return showText
-
     return showTime
 
 

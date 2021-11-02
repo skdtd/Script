@@ -56,8 +56,6 @@ class LableWindow(QMainWindow):
             LableWindow.STATUS_FLAG = True
 
     def showOrHide(self) -> None:
-        sender = self.sender()                          # 获取信号发送源
-        print(sender)
         if self.isHidden():
             self.show()
         else:
