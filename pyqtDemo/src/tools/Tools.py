@@ -1,10 +1,8 @@
-import threading
 from datetime import datetime
 
 
 class Tools():
     def timer(text: str):
-        print(text)
         '''打印执行时间'''
         def showTime(func):
             def showText(*args):
