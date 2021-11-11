@@ -53,3 +53,20 @@ print std
 # coding=UTF-8
 # windows下设置虚拟环境
 # set PATH=C:\Users\zhaozhiy\Desktop\wk\wrexcel\venv\Scripts;%PATH%;"%SystemRoot%\System32\chcp.com"
+
+```python
+def timer(text: str):
+    '''打印执行时间'''
+    def showTime(func):
+        def showText(*args):
+            start = datetime.now()
+            obj = func(*args)
+            end = datetime.now()
+            print('{0}: {1} Cost: {2}'.format(
+                text, datetime.strftime(end, '%Y-%m-%d %H:%M:%S'), end - start))
+            return obj
+        return showText
+    return showTime
+
+
+```

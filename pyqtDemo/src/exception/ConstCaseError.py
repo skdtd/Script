@@ -1,2 +1,0 @@
-class ConstCaseError(ValueError):
-    pass
