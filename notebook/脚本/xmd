@@ -139,10 +139,10 @@ setOption(){
     MSG='You can only log in to the target host with a key(-i) or password(-p)'
     [[ ! -z $PASSWORD && ! -z $IDENTITY ]] && usage ${MSG}
     
-    MSG='The "sshpass" module is required to log in with a password(-p), but "/usr/bin/sshpass" was not found'
+    MSG='The "sshpass" module is required to log in with a password(-p), but module "sshpass" was not found'
     [[ ! -z $PASSWORD && ! -f '/usr/bin/sshpass' ]] && usage ${MSG}
 
-    MSG='The module "/usr/bin/sshpass" was found but does not have execution permission'
+    MSG='The module "sshpass" was found but does not have execution permission'
     [[ ! -z $PASSWORD && ! -x '/usr/bin/sshpass' ]] && usage ${MSG}
 
 }

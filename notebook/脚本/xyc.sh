@@ -36,7 +36,7 @@ run(){
     local TONKE=$1
     local CMD=$2
     shift 2
-    [ "${FLOCKER}" != "${TONKE}" ] && exec env FLOCKER="${TONKE}" flock -en "${TONKE}" -c "${CMD}" "$@" || :
+    [ "${FLOCKER}" != "${TONKE}" ] && exec env HOST_LIST="${HOST_LIST}" DELAYTIME="${DELAYTIME:=1}" FLOCKER="${TONKE}" flock -en "${TONKE}" -c "${CMD}" "$@" || :
 }
 
 #####################################################################
@@ -95,7 +95,7 @@ monitorThead(){
     while read LINE
     do
         [[ -z ${QUIET} ]] && echo "$(date +%Y-%m-%d\ %T) $LINE"
-        echo $LINE >&1023 
+        echo $LINE >&1023
         run ${LOCK} headleThead &
     done
 }
@@ -109,7 +109,7 @@ monitorThead(){
 export -f rsyncInvoke headleThead
 
 # 参数收集
-TEMP=$(getopt -o qd:t:d:i:h  --long quiet,delaytime:,target:,monit-dir:,identity-file:help -n 'error' -- "$@")
+TEMP=$(getopt -o qd:t:m:i:h  --long quiet,delaytime:,target:,monit-dir:,identity-file:help -n 'error' -- "$@")
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; fi
 # 参数重排
 eval set -- "$TEMP"
@@ -138,17 +138,6 @@ done
 
 LOCK=$(readlink -e $(basename $0))  # 二重启动锁
 
-export HOST_LIST
-export DELAYTIME=${DELAYTIME:=1} RSH # 延迟启动(秒): 超过这个时间没有新的数据改动就触发同步操作
-
-# 全量更新
-for HOST in ${HOST_LIST[@]}
-do
-    for DIR in ${MONIT_DIR[@]}
-    do
-        rsync -qac -e "ssh ${RSH}" ${DIR} ${HOST}:${DIR}
-        rsync -qac -e "ssh ${RSH}" --delete ${DIR} ${HOST}:${DIR}
-    done
-done
-
 monitorThead
+
+# 在传输过程种新增的条目不会处理

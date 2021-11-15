@@ -138,3 +138,21 @@ function progress(){
     R=$(perl -E "say' ' x $((${TOTAL} - ${SPEED}))")
     echo -ne "\r[${L}${R}]${TEXT}"
 }
+
+################################################
+#
+# 发送文件
+#
+################################################
+function xyc()
+{
+    if [[ ! -f ~/hostlist ]]; then
+        echo 'no host list';
+        return 1;
+    fi;
+    file=$(readlink -m $1);
+    while read host; do
+        echo $host;
+        rsync -avrzhP $file $host:$file;
+    done < ~/hostlist
+}
