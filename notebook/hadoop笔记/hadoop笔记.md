@@ -35,83 +35,154 @@
 # 生产调优手册
 # Hadoop源码解析
 
-101: NameNode
+起停dfs
+start-dfs.sh
+stop-dfs.sh
+起停yarn
+start-yarn.sh
+stop-yarn.sh
+起停日志
+mapred --daemon start historyserver
+mapred --daemon stop historyserver
+
+单独起停节点
+hdfs --daemon start/stop namenode/datanode/secondarynamenode
+yarn --daemon start/stop resourcemanager/nodemanager
 
 
+创建文件夹
+hadoop fs -mkdir /input
+上传文件
+hadoop fs -put file /input
+
+启动任务
+hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount /input /out1
 
 
+# 端口号对应
+# 3.x 
+hdfs namenode: 内部通信端口 8020/9000/9820
+               用户查询端口 9870
+yarn           查看任务运行 8088
+               历史服务器   19888
+# 2.x
+hdfs namenode: 内部通信端口 8020/9000
+               用户查询端口 50070
+yarn           查看任务运行 8088
+               历史服务器   19888
 
+# 常用配置文件
+core-site.xml
+hdfs-site.xml
+yarn-site.xml
+mapred-site.xml
+workers(3.x) / slaves(2.x)
+
+# 生产环境不能连接外网时,需要时间同步
+1. 安装ntp: yum install ntp.x86_64
+2. 配置时间服务器: /etc/ntp.conf
+   * #restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap
+   修改网段内可访问本机
+   * server 0.centos.pool.ntp.org iburst
+   关闭默认访问公网中时间服务器
+   * 节点丢失网络连接依然使用本地时间为集群提供时间同步
+   sed -ie 's/#restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap/restrict 192.168.100.0 mask 255.255.255.0 nomodify notrap/g;s/^server/#server/g;$a server 127.127.1.0\nfudge 127.127.1.0 stratum 10' /etc/ntp.conf
+3. 同时同步系统时间与硬件时间
+   echo 'SYNC_HWCLOCK=yes' >> /etc/sysconfig/ntpd
+4. 启动服务: systemctl enable --now ntpd
+5. 关闭其他节点的ntpd服务(防止与公网时间同步),设置定时任务与主节点同步(crontab -e)
+   echo '*/1 * * * * /usr/bin/ntpdate 192.168.100.101' > /var/spool/cron/root
+6. 关闭节点每次同步之后提示新邮件
+   echo "unset MAILCHECK" >> /etc/profile
+   source /etc/profile
 
 core-site.xml
 ```xml
-<!-- NameNode的地址 -->
 <property>
   <name>fs.defaultFS</name>
-  <value>file:///</value>
-  
-  <description>The name of the default file system.  A URI whose
-  scheme and authority determine the FileSystem implementation.  The
-  uri's scheme determines the config property (fs.SCHEME.impl) naming
-  the FileSystem implementation class.  The uri's authority is used to
-  determine the host, port, etc. for a filesystem.</description>
+  <value>hdfs://hd01:8020</value>
+  <description>NameNode的地址</description>
 </property>
-<!-- 数据存储目录 -->
 <property>
   <name>hadoop.tmp.dir</name>
-  <value>/tmp/hadoop-${user.name}</value>
-  <description>A base for other temporary directories.</description>
+  <value>/opt/hadoop-3.3.1/data</value>
+  <description>数据存储目录</description>
 </property>
 ```
 hdfs-site.xml
 ```xml
-<!-- NameNode Web端访问地址 -->
 <property>
   <name>dfs.namenode.http-address</name>
-  <value>0.0.0.0:9870</value>
+  <value>http://hd01:9870</value>
   <description>
-    The address and the base port where the dfs namenode web ui will listen on.
+    NameNode Web端访问地址
   </description>
 </property>
-<!-- Secondary NameNode Web端访问地址 -->
 <property>
   <name>dfs.namenode.secondary.http-address</name>
-  <value>0.0.0.0:9868</value>
+  <value>http://hd03:9868</value>
   <description>
-    The secondary namenode http server address and port.
+    Secondary NameNode Web端访问地址
   </description>
 </property>
 ```
 yarn-site.xml
 ```xml
-<!-- 指定yarm使用shuffle -->
 <property>
-   <description>A comma separated list of services where service name should only
-   contain a-zA-Z0-9_ and can not start with numbers</description>
+   <description>指定yarm使用shuffle</description>
    <name>yarn.nodemanager.aux-services</name>
-   <value></value>
-   <!--<value>mapreduce_shuffle</value>-->
+   <value>mapreduce_shuffle</value>
 </property>
-<!-- 指定ResourceManager地址 -->
 <property>
-   <description>The hostname of the RM.</description>
+   <description>指定ResourceManager地址</description>
    <name>yarn.resourcemanager.hostname</name>
-   <value>0.0.0.0</value>
+   <value>hd02</value>
 </property>
-<!-- 基础系统环境变量(3.1版本需要配置HADOOP_MAPRED_HOME,3.2以上无需额外配置该项) -->
 <property>
-   <description>Environment variables that containers may override rather than use NodeManager's default.</description>
+   <description>
+      基础系统环境变量(3.1版本需要配置HADOOP_MAPRED_HOME,3.2以上无需额外配置该项)
+      # 3.3版本貌似还是需要配置
+   </description>
    <name>yarn.nodemanager.env-whitelist</name>
    <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_HOME,PATH,LANG,TZ,HADOOP_MAPRED_HOME</value>
+</property>
+<property>
+   <description>日志聚集</description>
+   <name>yarn.log-aggregation-enable</name>
+   <value>true</value>
+</property>
+<property>
+   <description>
+      设置日志聚集服务器地址
+   </description>
+   <name>yarn.log.server.url</name>
+   <value>http://hd04:1988/jobhistory/logs</value>
+</property>
+<property>
+   <description>
+      日志保存时间(7天)
+   </description>
+   <name>yarn.log-aggregation.retain-seconds</name>
+   <value>604800</value>
 </property>
 ```
 mapred-site.xml
 ```xml
-<!-- 指定mapreduce运行再yarn上 -->
 <property>
   <name>mapreduce.framework.name</name>
   <value>yarn</value>
-  <description>The runtime framework for executing MapReduce jobs.
-  Can be one of local, classic or yarn.
+  <description>
+   指定mapreduce运行在yarn上
   </description>
+</property>
+<property>
+  <name>mapreduce.jobhistory.address</name>
+  <value>http://hd04:10020</value>
+  <description>历史服务器通信端口</description>
+</property>
+<property>
+  <name>mapreduce.jobhistory.webapp.address</name>
+  <value>http://hd04:19888</value>
+  <description>历史服务器web端</description>
 </property>
 ```

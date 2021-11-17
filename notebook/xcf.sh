@@ -87,11 +87,11 @@ function _rsync(){
     for HOST in ${HOSTLIST[@]}
     do
         echo -e "\033[43;31mNode: ${HOST}\033[0m"
-        local FILE=$(readlink -m $1)
-        rsync -arzP \
+        local F=$(readlink -m $1)
+        rsync -arczP \
         -e "ssh -p ${PORT} -i ${IDENTITY}" \
-        --rsync-path="mkdir -p $(dirname ${FILE}) && rsync" \
-        "${FILE}" "${USER}@${HOST}:${FILE}"
+        --rsync-path="mkdir -p $(dirname ${F}) && rsync" \
+        "${F}" "${USER}@${HOST}:$(dirname ${F})"
     done
 }
 
@@ -116,4 +116,4 @@ else
     xmd $@
 fi
 
-# hostlist 需要排除本机否则无限卡死
+# hostlist 所有节点需要配置免密
