@@ -34,3 +34,84 @@
 # YARN(Yet Another Resource Negotiator)(负责资源管理)
 # 生产调优手册
 # Hadoop源码解析
+
+101: NameNode
+
+
+
+
+
+
+core-site.xml
+```xml
+<!-- NameNode的地址 -->
+<property>
+  <name>fs.defaultFS</name>
+  <value>file:///</value>
+  
+  <description>The name of the default file system.  A URI whose
+  scheme and authority determine the FileSystem implementation.  The
+  uri's scheme determines the config property (fs.SCHEME.impl) naming
+  the FileSystem implementation class.  The uri's authority is used to
+  determine the host, port, etc. for a filesystem.</description>
+</property>
+<!-- 数据存储目录 -->
+<property>
+  <name>hadoop.tmp.dir</name>
+  <value>/tmp/hadoop-${user.name}</value>
+  <description>A base for other temporary directories.</description>
+</property>
+```
+hdfs-site.xml
+```xml
+<!-- NameNode Web端访问地址 -->
+<property>
+  <name>dfs.namenode.http-address</name>
+  <value>0.0.0.0:9870</value>
+  <description>
+    The address and the base port where the dfs namenode web ui will listen on.
+  </description>
+</property>
+<!-- Secondary NameNode Web端访问地址 -->
+<property>
+  <name>dfs.namenode.secondary.http-address</name>
+  <value>0.0.0.0:9868</value>
+  <description>
+    The secondary namenode http server address and port.
+  </description>
+</property>
+```
+yarn-site.xml
+```xml
+<!-- 指定yarm使用shuffle -->
+<property>
+   <description>A comma separated list of services where service name should only
+   contain a-zA-Z0-9_ and can not start with numbers</description>
+   <name>yarn.nodemanager.aux-services</name>
+   <value></value>
+   <!--<value>mapreduce_shuffle</value>-->
+</property>
+<!-- 指定ResourceManager地址 -->
+<property>
+   <description>The hostname of the RM.</description>
+   <name>yarn.resourcemanager.hostname</name>
+   <value>0.0.0.0</value>
+</property>
+<!-- 基础系统环境变量(3.1版本需要配置HADOOP_MAPRED_HOME,3.2以上无需额外配置该项) -->
+<property>
+   <description>Environment variables that containers may override rather than use NodeManager's default.</description>
+   <name>yarn.nodemanager.env-whitelist</name>
+   <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_HOME,PATH,LANG,TZ,HADOOP_MAPRED_HOME</value>
+</property>
+```
+mapred-site.xml
+```xml
+<!-- 指定mapreduce运行再yarn上 -->
+<property>
+  <name>mapreduce.framework.name</name>
+  <value>yarn</value>
+  <description>The runtime framework for executing MapReduce jobs.
+  Can be one of local, classic or yarn.
+  </description>
+</property>
+```

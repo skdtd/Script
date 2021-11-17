@@ -3,7 +3,7 @@
 # 设置参数默认值
 USER="${USER:=$(id -nu)}"
 PORT='22'
-IDENTITY='~/.ssh/id_rsa'
+IDENTITY="~/.ssh/id_rsa"
 TIMEOUT='60'
 IRS='{&n}'
 
@@ -46,11 +46,12 @@ function usage(){
 function xmd(){
     for HOST in ${HOSTLIST[@]}
     do
+        CWD=$(pwd)
         { timeout "${TIMEOUT}" ssh \
             -p "${PORT}" \
             -i "${IDENTITY}" \
             "${USER}@${HOST}" \
-            "echo -e \"\033[43;31mNode: ${HOST}\033[0m\";$@;exit" | \
+            "echo -e \"\033[43;31mNode: ${HOST}\033[0m\";cd ${CWD} && $@;exit" | \
             awk -v ORS="${IRS}" '{print $0}' >&1023;echo >&1023 & } 2>/dev/null
     done
     wait
@@ -86,10 +87,11 @@ function _rsync(){
     for HOST in ${HOSTLIST[@]}
     do
         echo -e "\033[43;31mNode: ${HOST}\033[0m"
+        local FILE=$(readlink -m $1)
         rsync -arzP \
         -e "ssh -p ${PORT} -i ${IDENTITY}" \
-        --rsync-path="mkdir -p $(dirname $(readlink -m $1)) && rsync" \
-        "$1" "${USER}@${HOST}:$1"
+        --rsync-path="mkdir -p $(dirname ${FILE}) && rsync" \
+        "${FILE}" "${USER}@${HOST}:${FILE}"
     done
 }
 
@@ -108,8 +110,10 @@ UUID=$(cat /proc/sys/kernel/random/uuid).fifo
 mkfifo /tmp/.${UUID}
 exec 1023<>/tmp/.${UUID}
 rm -rf /tmp/.${UUID}
-if [[ -f $1 ]];then
+if [[ -f $1 || -d $1 ]];then
     xyc $@
 else
     xmd $@
 fi
+
+# hostlist 需要排除本机否则无限卡死
