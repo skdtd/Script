@@ -139,7 +139,7 @@ function _rsync(){
         local FILE=$(readlink -m $1)
         local DIR=$(dirname ${FILE})
         rsync -arzcP \
-        -e "ssh -p ${PORT} -i ${IDENTITY}" \
+        -e "ssh -o GSSAPIAuthentication=no -o StrictHostKeyChecking=no -p ${PORT} -i ${IDENTITY}" \
         --rsync-path="mkdir -p ${DIR} && rsync" \
         "${FILE}" "${USER}@${HOST}:${DIR}"
     done
