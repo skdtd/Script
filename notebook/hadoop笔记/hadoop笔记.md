@@ -50,15 +50,6 @@ hdfs --daemon start/stop namenode/datanode/secondarynamenode
 yarn --daemon start/stop resourcemanager/nodemanager
 
 
-创建文件夹
-hadoop fs -mkdir /input
-上传文件
-hadoop fs -put file /input
-
-启动任务
-hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount /input /out1
-
-
 # 端口号对应
 # 3.x 
 hdfs namenode: 内部通信端口 8020/9000/9820
@@ -113,16 +104,16 @@ hdfs-site.xml
 ```xml
 <property>
   <name>dfs.namenode.http-address</name>
-  <value>http://hd01:9870</value>
+  <value>hd01:9870</value>
   <description>
     NameNode Web端访问地址
   </description>
 </property>
 <property>
   <name>dfs.namenode.secondary.http-address</name>
-  <value>http://hd03:9868</value>
+  <value>hd03:9868</value>
   <description>
-    Secondary NameNode Web端访问地址
+    Secondary NameNode 地址
   </description>
 </property>
 ```
@@ -156,7 +147,7 @@ yarn-site.xml
       设置日志聚集服务器地址
    </description>
    <name>yarn.log.server.url</name>
-   <value>http://hd04:1988/jobhistory/logs</value>
+   <value>hd04:1988/jobhistory/logs</value>
 </property>
 <property>
    <description>
@@ -177,12 +168,23 @@ mapred-site.xml
 </property>
 <property>
   <name>mapreduce.jobhistory.address</name>
-  <value>http://hd04:10020</value>
+  <value>hd04:10020</value>
   <description>历史服务器通信端口</description>
 </property>
 <property>
   <name>mapreduce.jobhistory.webapp.address</name>
-  <value>http://hd04:19888</value>
+  <value>hd04:19888</value>
   <description>历史服务器web端</description>
 </property>
 ```
+
+
+# shell操作
+创建文件夹
+hadoop fs -mkdir /input
+上传文件
+hadoop fs -put file /input
+
+启动任务
+hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount /input /out1
+
