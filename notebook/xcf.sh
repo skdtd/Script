@@ -1,7 +1,12 @@
 #!/bin/bash
 
+# 提升ssh连接速度
+# sed -ie 's/^#UseDNS yes/UseDNS no/;s/GSSAPIAuthentication.*/GSSAPIAuthentication no/g' /etc/ssh/sshd_config && systemctl restart sshd
+# 设置免密
+# for host in $HOSTLIST;do ssh-copy-id -o StrictHostKeyChecking=no $(id -nu)@${host};done
+
 # 设置参数默认值
-USER="${USER:=$(id -nu)}"
+USER="${USER:=$(id -nu)}"                                                                
 PORT='22'
 IDENTITY="~/.ssh/id_rsa"
 TIMEOUT='60'
@@ -44,12 +49,18 @@ function usage(){
 #
 ################################################
 function xmd(){
+    # 开启管道
+    UUID=$(cat /proc/sys/kernel/random/uuid).fifo
+    mkfifo /tmp/.${UUID}
+    exec 1023<>/tmp/.${UUID}
+    rm -rf /tmp/.${UUID}
     for HOST in ${HOSTLIST[@]}
     do
         CWD=$(pwd)
         { timeout "${TIMEOUT}" ssh \
-            -p "${PORT}" \
-            -i "${IDENTITY}" \
+            -o StrictHostKeyChecking=no \
+            -o GSSAPIAuthentication=no \
+            -p"${PORT}" -i"${IDENTITY}" \
             "${USER}@${HOST}" \
             "echo -e \"\033[43;31mNode: ${HOST}\033[0m\";cd ${CWD} && $@;exit" | \
             awk -v ORS="${IRS}" '{print $0}' >&1023;echo >&1023 & } 2>/dev/null
@@ -87,11 +98,12 @@ function _rsync(){
     for HOST in ${HOSTLIST[@]}
     do
         echo -e "\033[43;31mNode: ${HOST}\033[0m"
-        local F=$(readlink -m $1)
-        rsync -arczP \
+        local FILE=$(readlink -m $1)
+        local DIR=$(dirname ${FILE})
+        rsync -arzcP \
         -e "ssh -p ${PORT} -i ${IDENTITY}" \
-        --rsync-path="mkdir -p $(dirname ${F}) && rsync" \
-        "${F}" "${USER}@${HOST}:$(dirname ${F})"
+        --rsync-path="mkdir -p ${DIR} && rsync" \
+        "${FILE}" "${USER}@${HOST}:${DIR}"
     done
 }
 
@@ -99,17 +111,17 @@ function _scp(){
     for HOST in ${HOSTLIST[@]}
     do
         echo -e "\033[43;31mNode: ${HOST}\033[0m"
-        scp -r -p "${PORT}" -i "${IDENTITY}" "${FILE}" "${USER}@{HOST}:${FILE}"
+        local FILE=$(readlink -m $1)
+        local DIR=$(dirname ${FILE})
+        scp -o StrictHostKeyChecking=no \
+            -o GSSAPIAuthentication=no \
+            -r -p"${PORT}" -i"${IDENTITY}" "${FILE}" \
+            "${USER}@${HOST}:${DIR}"
     done
 }
 
 [[ $# == 0 ]] && usage && exit 0
 [[ -z "${HOSTLIST}" ]] && echo "plese set hostlist" && exit 1
-# 开启管道
-UUID=$(cat /proc/sys/kernel/random/uuid).fifo
-mkfifo /tmp/.${UUID}
-exec 1023<>/tmp/.${UUID}
-rm -rf /tmp/.${UUID}
 if [[ -f $1 || -d $1 ]];then
     xyc $@
 else
