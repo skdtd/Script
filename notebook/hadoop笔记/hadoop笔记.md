@@ -29,64 +29,55 @@
    </br><b>`rpm -qa | grep -i java | xargs -n1 rpm -e --nodeps`</b>
    5. 虚拟机使用复制虚拟机的方式, 云节点使用脚本部署
 ## 常见错误解决方案
+> Does not contain a valid host:port authority: http:
+* 不要在配置文件中指定http协议
 # HDFS(负责数据存储)
-# MapReduce(负责数据计算)
-# YARN(Yet Another Resource Negotiator)(负责资源管理)
-# 生产调优手册
-# Hadoop源码解析
+## 起停基本命令(在对应的节点上执行)
+> 起停dfs
+* <b>`${HADOOP_HOME}/sbin/start-dfs.sh`</b>
+* <b>`${HADOOP_HOME}/sbin/stop-dfs.sh`</b>
+> 起停yarn
+* <b>`${HADOOP_HOME}/sbin/start-yarn.sh`</b>
+* <b>`${HADOOP_HOME}/sbin/stop-yarn.sh`</b>
+> 单节点起停
+* <b>`hdfs --daemon start <node>`</b>
+* <b>`hdfs --daemon stop <node>`</b>
+* <b>`yarn --daemon start <node>`</b>
+* <b>`yarn --daemon stop <node>`</b>
+* <b>`mapred --daemon start <node>`</b>
+* <b>`mapred --daemon stop <node>`</b>
 
-起停dfs
-start-dfs.sh
-stop-dfs.sh
-起停yarn
-start-yarn.sh
-stop-yarn.sh
-起停日志
-mapred --daemon start historyserver
-mapred --daemon stop historyserver
-
-单独起停节点
-hdfs --daemon start/stop namenode/datanode/secondarynamenode
-yarn --daemon start/stop resourcemanager/nodemanager
-
-
-# 端口号对应
-# 3.x 
-hdfs namenode: 内部通信端口 8020/9000/9820
-               用户查询端口 9870
-yarn           查看任务运行 8088
-               历史服务器   19888
-# 2.x
-hdfs namenode: 内部通信端口 8020/9000
-               用户查询端口 50070
-yarn           查看任务运行 8088
-               历史服务器   19888
-
-# 常用配置文件
-core-site.xml
-hdfs-site.xml
-yarn-site.xml
-mapred-site.xml
-workers(3.x) / slaves(2.x)
-
-# 生产环境不能连接外网时,需要时间同步
-1. 安装ntp: yum install ntp.x86_64
-2. 配置时间服务器: /etc/ntp.conf
-   * #restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap
-   修改网段内可访问本机
-   * server 0.centos.pool.ntp.org iburst
-   关闭默认访问公网中时间服务器
-   * 节点丢失网络连接依然使用本地时间为集群提供时间同步
-   sed -ie 's/#restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap/restrict 192.168.100.0 mask 255.255.255.0 nomodify notrap/g;s/^server/#server/g;$a server 127.127.1.0\nfudge 127.127.1.0 stratum 10' /etc/ntp.conf
-3. 同时同步系统时间与硬件时间
-   echo 'SYNC_HWCLOCK=yes' >> /etc/sysconfig/ntpd
-4. 启动服务: systemctl enable --now ntpd
-5. 关闭其他节点的ntpd服务(防止与公网时间同步),设置定时任务与主节点同步(crontab -e)
-   echo '*/1 * * * * /usr/bin/ntpdate 192.168.100.101' > /var/spool/cron/root
-6. 关闭节点每次同步之后提示新邮件
-   echo "unset MAILCHECK" >> /etc/profile
-   source /etc/profile
-
+HDFS                |YARN               | HISTORY
+:-                  |:-                 |:-------
+`namenode`          |`nodemanager`      |`historyserver`
+`datanode`          |`resourcemanager`
+`secondarynamenode` |registrydns
+sps                 |proxyserver
+zkfc                |router
+nfs3                |sharedcachemanager
+portmap             |timelineserver
+dfsrouter
+diskbalancer
+httpfs
+journalnode
+mover
+balancer
+## 内部使用端口
+### 3.x
+功能   |端口号
+:- |:- 
+HDFS内部通信端口    |8020/9000/`9820`
+HDFS用户查询端口    |`9870`
+YARN查看任务运行    |8088
+YARN历史服务器      |19888
+### 2.x
+功能   |端口号
+:- |:- 
+HDFS内部通信端口    |8020/9000
+HDFS用户查询端口    |`50070`
+YARN查看任务运行    |8088
+YARN历史服务器      |19888
+## 常用配置文件
 core-site.xml
 ```xml
 <property>
@@ -177,14 +168,43 @@ mapred-site.xml
   <description>历史服务器web端</description>
 </property>
 ```
-
-
-# shell操作
-创建文件夹
+## 生产环境不能连接外网时,需要时间同步
+1. 安装ntp: `yum install ntp.x86_64`
+2. 配置时间服务器: `/etc/ntp.conf`
+   * #restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap
+   </br>修改网段内可访问本机
+   * server 0.centos.pool.ntp.org iburst
+   </br>关闭默认访问公网中时间服务器
+   * 节点丢失网络连接依然使用本地时间为集群提供时间同步
+   ```bash
+   sed -ie 's/#restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap/restrict 192.168.100.0 mask 255.255.255.0 nomodify notrap/g;s/^server/#server/g;$a server 127.127.1.0\nfudge 127.127.1.0 stratum 10' /etc/ntp.conf
+   ```
+3. 同时同步系统时间与硬件时间
+   `echo 'SYNC_HWCLOCK=yes' >> /etc/sysconfig/ntpd`
+4. 启动服务: systemctl enable --now ntpd
+5. 关闭其他节点的ntpd服务(防止与公网时间同步),设置定时任务与主节点同步(crontab -e)
+   ```bash
+   echo '*/1 * * * * /usr/bin/ntpdate 192.168.100.101' > /var/spool/cron/root
+   ```
+6. 关闭节点每次同步之后提示新邮件
+   ```bash
+   echo "unset MAILCHECK" >> /etc/profile
+   source /etc/profile
+   ```
+## shell的操作
+```bash
+#创建文件夹
 hadoop fs -mkdir /input
-上传文件
+#上传文件
 hadoop fs -put file /input
 
-启动任务
+#启动任务
 hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount /input /out1
+```
+## API的操作
+> [编译windows版本](https://cwiki.apache.org/confluence/display/HADOOP2/Hadoop2OnWindows)
+# MapReduce(负责数据计算)
+# YARN(Yet Another Resource Negotiator)(负责资源管理)
+# 生产调优手册
+# Hadoop源码解析
 
