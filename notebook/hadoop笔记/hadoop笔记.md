@@ -208,3 +208,7 @@ hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.
 # 生产调优手册
 # Hadoop源码解析
 
+
+
+
+windows编译hadoop https://www.cnblogs.com/jhxxb/p/10765815.html

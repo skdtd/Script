@@ -3,17 +3,9 @@
 usage(){
     cat <<< """Usage:
     hadoop集群起停
-    $(basename $0) [start/stop] [all]
-    $(basename $0) [start/stop] [nn/dn/sn/rm/nm/hs] [host]
-    
-    all  all
-    nn   namenode
-    dn   datanode
-    sn   secondarynamenode
-    rm   resourcemanager
-    nm   nodemanager
-    hs   historyserver"""
+    $(basename $0) [start/stop]"""
 }
+
 [[ $# == 0 ]] && usage  && exit 0
 
 # 检查是否root运行
@@ -26,28 +18,7 @@ ACT="start stop"
 [[ ! "${ACT[@]}" =~ "$1" || "$1" =~ ' ' ]] && echo 'The first parameter can only be start or stop' && exit 1
 ACT="$1"
 
-# 检查第二个参数是否为节点名字
-declare -A NODES CONFS
-NODES=(
-    ["all"]="all"
-    ["nn"]="namenode"
-    ["dn"]="datanode"
-    ["sn"]="secondarynamenode"
-    ["rm"]="resourcemanager"
-    ["nm"]="nodemanager"
-    ["hs"]="historyserver"
-)
-
-[[ ! ${!NODES[@]} =~ "$2" ]] && echo -e \
-'''Please select from the following options:
-nn: namenode
-dn: datanode
-sn: secondarynamenode
-rm: resourcemanager
-nm: nodemanager
-hs: historyserver
-''' && exit 1
-
+declare -A CONFS
 # 从配置文件中获取各个节点地址
 CONFS=(
     ["NAMENODE"]='fs.defaultFS'
@@ -58,6 +29,7 @@ CONFS=(
 
 for NODE in ${!CONFS[@]}
 do
+    # 从配置文件中取出各个主机地址
     TMP=$(awk -v ORS="" '{print $0}' $(find ${HADOOP_HOME}/etc/hadoop/* -type f) | \
     awk -v RS='<property>' '{print $0}' | \
     grep "${CONFS[$NODE]}" | \
@@ -69,26 +41,15 @@ done
 
 # 连接对应节点
 connect(){
-    if [[ "${!CONFS[@]}" =~ "$1" ]];then
-        local HOST="${CONFS[$1]}"
-    else
-        local HOST="$1"
-    fi
+    local HOST="${CONFS[$1]}"
     shift
     ssh -o StrictHostKeyChecking=no \
         -o GSSAPIAuthentication=no \
         "$(id -nu)@${HOST}" "$@"
 }
 
-if [[ "$2" == 'all' && "$3" == '' ]];then
-    # 群起/群停
-    { connect "NAMENODE" "${HADOOP_HOME}/sbin/${ACT}-dfs.sh" & }
-    { connect "RESOURCEMANAGER" "${HADOOP_HOME}/sbin/${ACT}-yarn.sh" & }
-    { connect "HISTORYSERVER" "${HADOOP_HOME}/bin/mapred --daemon ${ACT} ${NODES["hs"]}" & }
-    wait
-elif [[ "$3" != '' ]];then
-    # 单节点起停
-    connect $3 "${HADOOP_HOME}/bin/mapred --daemon ${ACT} ${NODES[$2]}"
-else
-    usage && exit 1
-fi
+# 群起/群停
+{ connect "NAMENODE" "${HADOOP_HOME}/sbin/${ACT}-dfs.sh" & }
+{ connect "RESOURCEMANAGER" "${HADOOP_HOME}/sbin/${ACT}-yarn.sh" & }
+{ connect "HISTORYSERVER" "${HADOOP_HOME}/bin/mapred --daemon ${ACT} historyserver" & }
+wait
