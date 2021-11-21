@@ -3,7 +3,13 @@
 # 提升ssh连接速度
 # sed -ie 's/^#UseDNS.*/UseDNS no/;s/.*GSSAPIA.*/GSSAPIAuthentication no/g' /etc/ssh/sshd_config && systemctl restart sshd
 # 设置免密
+## 生成密钥
+# for host in $XCFHOSTLIST;do ssh -o StrictHostKeyChecking=no $(id -nu)@${host} -- "ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa -q";done
+## 分发密钥
 # for host in $XCFHOSTLIST;do ssh-copy-id -o StrictHostKeyChecking=no $(id -nu)@${host};done
+## 添加免密
+# for host in $XCFHOSTLIST;do ssh -o StrictHostKeyChecking=no $(id -nu)@${host} -- "grep $(hostname) ~/.ssh/authorized_keys >> /dev/null || echo $(cat ~/.ssh/id_rsa.pub) >> ~/.ssh/authorized_keys";done
+
 
 # 设置参数默认值
 USER="${USER:=$(id -nu)}"               # 执行用户, 默认当前操作用户

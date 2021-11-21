@@ -29,6 +29,8 @@
    </br><b>`rpm -qa | grep -i java | xargs -n1 rpm -e --nodeps`</b>
    5. 虚拟机使用复制虚拟机的方式, 云节点使用脚本部署
 ## 常见错误解决方案
+> 没有到主机的路由
+* 防火墙未配置或者workers
 > Does not contain a valid host:port authority: http:
 * 不要在配置文件中指定http协议
 # HDFS(负责数据存储)
@@ -78,6 +80,13 @@ HDFS用户查询端口    |`50070`
 YARN查看任务运行    |8088
 YARN历史服务器      |19888
 ## 常用配置文件
+workers
+```
+hd01
+hd02
+hd03
+hd04
+```
 core-site.xml
 ```xml
 <property>
