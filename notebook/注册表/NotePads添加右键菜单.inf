@@ -1,0 +1,14 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultInstall]
+AddReg=Notepads
+
+[Notepads]
+hkcr,"*\\shell\\Notepads",,,"Open with Notepads"
+hkcr,"*\\shell\\Notepads\\command",,,"""C:\Program Files\WindowsApps\19282JackieLiu.Notepads-Beta_1.4.6.0_x64__echhpq9pdbte8\Notepads.exe"" ""%%1"" %%*"
+hkcr,"*\\shell\\Notepads","Icon",0x20000,"C:\Windows\System32\notepad.exe, 0"
+
+hkcr,"Directory\\shell\\Notepads",,,"Open with Notepads"
+hkcr,"Directory\\shell\\Notepads\\command",,,"""C:\Program Files\WindowsApps\19282JackieLiu.Notepads-Beta_1.4.6.0_x64__echhpq9pdbte8\Notepads.exe"" ""%%1"""
+hkcr,"Directory\\shell\\Notepads","Icon",0x20000,"C:\Windows\System32\notepad.exe, 0"
