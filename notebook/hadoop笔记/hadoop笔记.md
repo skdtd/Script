@@ -49,15 +49,15 @@
 * <b>`mapred --daemon start <node>`</b>
 * <b>`mapred --daemon stop <node>`</b>
 
-HDFS                |YARN               | HISTORY
-:-                  |:-                 |:-------
-`namenode`          |`nodemanager`      |`historyserver`
-`datanode`          |`resourcemanager`
-`secondarynamenode` |registrydns
-sps                 |proxyserver
-zkfc                |router
-nfs3                |sharedcachemanager
-portmap             |timelineserver
+| HDFS                | YARN               | HISTORY         |
+| :------------------ | :----------------- | :-------------- |
+| `namenode`          | `nodemanager`      | `historyserver` |
+| `datanode`          | `resourcemanager`  |
+| `secondarynamenode` | registrydns        |
+| sps                 | proxyserver        |
+| zkfc                | router             |
+| nfs3                | sharedcachemanager |
+| portmap             | timelineserver     |
 dfsrouter
 diskbalancer
 httpfs
@@ -66,19 +66,19 @@ mover
 balancer
 ## 内部使用端口
 ### 3.x
-功能   |端口号
-:- |:- 
-HDFS内部通信端口    |8020/9000/`9820`
-HDFS用户查询端口    |`9870`
-YARN查看任务运行    |8088
-YARN历史服务器      |19888
+| 功能             | 端口号           |
+| :--------------- | :--------------- |
+| HDFS内部通信端口 | 8020/9000/`9820` |
+| HDFS用户查询端口 | `9870`           |
+| YARN查看任务运行 | 8088             |
+| YARN历史服务器   | 19888            |
 ### 2.x
-功能   |端口号
-:- |:- 
-HDFS内部通信端口    |8020/9000
-HDFS用户查询端口    |`50070`
-YARN查看任务运行    |8088
-YARN历史服务器      |19888
+| 功能             | 端口号    |
+| :--------------- | :-------- |
+| HDFS内部通信端口 | 8020/9000 |
+| HDFS用户查询端口 | `50070`   |
+| YARN查看任务运行 | 8088      |
+| YARN历史服务器   | 19888     |
 ## 常用配置文件
 workers
 ```
@@ -105,17 +105,55 @@ hdfs-site.xml
 <property>
   <name>dfs.namenode.http-address</name>
   <value>hd01:9870</value>
-  <description>
-    NameNode Web端访问地址
-  </description>
+  <description>NameNode Web端访问地址</description>
 </property>
 <property>
   <name>dfs.namenode.secondary.http-address</name>
   <value>hd03:9868</value>
+  <description>Secondary NameNode 地址</description>
+</property>
+<property>
+  <name>dfs.namenode.checkpoint.period</name>
+  <value>3600s</value>
+  <description>检查点检查时间(2nn)</description>
+</property>
+<property>
+  <name>dfs.namenode.checkpoint.txns</name>
+  <value>1000000</value>
+  <description>检查点检查数据量(2nn)</description>
+</property>
+<property>
+  <name>dfs.namenode.checkpoint.check.period</name>
+  <value>60s</value>
+  <description>检查数据量轮询时间(2nn)</description>
+</property>
+<property>
+  <name>dfs.blockreport.intervalMsec</name>
+  <value>21600000</value>
+  <description>定时汇报dn的块信息</description>
+</property>
+<property>
+  <name>dfs.datanode.directoryscan.interval</name>
+  <value>21600s</value>
+  <description>定时扫描本机节点快信息</description>
+</property>
+<property>
+  <name>dfs.namenode.heartbeat.recheck-interval</name>
+  <value>300000</value>
   <description>
-    Secondary NameNode 地址
+    心跳检查超时时间(ms)
+    超时(2 * 心跳检查超时时间 + 10 * 心跳检查间隔)之后,判定节点离线
   </description>
 </property>
+<property>
+  <name>dfs.heartbeat.interval</name>
+  <value>3s</value>
+  <description>
+    心跳检查间隔
+    (ms(millis), s(sec), m(min), h(hour), d(day))
+  </description>
+</property>
+
 ```
 yarn-site.xml
 ```xml
@@ -143,16 +181,12 @@ yarn-site.xml
    <value>true</value>
 </property>
 <property>
-   <description>
-      设置日志聚集服务器地址
-   </description>
+   <description>设置日志聚集服务器地址</description>
    <name>yarn.log.server.url</name>
    <value>hd04:1988/jobhistory/logs</value>
 </property>
 <property>
-   <description>
-      日志保存时间(7天)
-   </description>
+   <description>日志保存时间(7天)</description>
    <name>yarn.log-aggregation.retain-seconds</name>
    <value>604800</value>
 </property>
@@ -162,9 +196,7 @@ mapred-site.xml
 <property>
   <name>mapreduce.framework.name</name>
   <value>yarn</value>
-  <description>
-   指定mapreduce运行在yarn上
-  </description>
+  <description>指定mapreduce运行在yarn上</description>
 </property>
 <property>
   <name>mapreduce.jobhistory.address</name>
@@ -213,6 +245,20 @@ hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.
 ## API的操作
 > [编译windows版本](https://cwiki.apache.org/confluence/display/HADOOP2/Hadoop2OnWindows)
 # MapReduce(负责数据计算)
+## 数据序列化对照
+Java类型  | Hadoop Writable类型
+:-        |:-
+boolean   |BooleanWritable
+byte      |ByteWritable
+int       |IntWritable
+float     |FloatWritable
+long      |LongWritable
+double    |DoubleWritable
+String    |Text
+Map       |MapWritable
+Array     |ArrayWritable
+Null      |NullWritable
+
 # YARN(Yet Another Resource Negotiator)(负责资源管理)
 # 生产调优手册
 # Hadoop源码解析
