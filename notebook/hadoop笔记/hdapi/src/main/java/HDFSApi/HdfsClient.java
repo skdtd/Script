@@ -1,22 +1,15 @@
-package HDFSApt;
+package HDFSApi;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
-import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Properties;
-import java.util.stream.Stream;
 
 /**
  * 客户端代码常用套路
@@ -31,7 +24,8 @@ public class HdfsClient {
 
     @Before
     public void init() throws URISyntaxException, IOException, InterruptedException {
-        System.setProperty("hadoop.home.dir", "C:\\devTool\\env\\hadoop-3.1.0");
+//        System.setProperty("hadoop.home.dir", "C:\\devTool\\env\\hadoop-3.1.0");
+        System.setProperty("hadoop.home.dir", "C:\\Users\\zhaozhiy\\Desktop\\hdapi\\src\\main\\resources\\hadoop-3.1.0");
         // 连接的集群nn地址
         URI uri = new URI("hdfs://hd01:8020");
         // 创建一个配置文件
@@ -39,7 +33,8 @@ public class HdfsClient {
         // 配置优先级: hdfs-default.xml < hdfs-site.xml < 在项目资源目录下的配置文件 < 代码里面的配置
         configuration.set("dfs.replication", "2");
         // 用户
-        String user = "worker";
+//        String user = "worker";
+        String user = "work";
 
         // 1 获取到了客户端对象
         fs = FileSystem.get(uri, configuration, user);
@@ -53,7 +48,7 @@ public class HdfsClient {
 
     // 创建目录
     @Test
-    public void testmkdir() throws URISyntaxException, IOException, InterruptedException {
+    public void testmkdir() throws IOException {
         // 2 创建一个文件夹
         fs.mkdirs(new Path("/xiyou/huaguoshan1"));
     }
@@ -62,8 +57,6 @@ public class HdfsClient {
     /**
      * 参数优先级
      * hdfs-default.xml => hdfs-site.xml=> 在项目资源目录下的配置文件 =》代码里面的配置
-     *
-     * @throws IOException
      */
     @Test
     public void testPut() throws IOException {
@@ -72,9 +65,12 @@ public class HdfsClient {
     }
 
     @Test
-    public void testPut2() throws IOException {
-        FSDataOutputStream fos = fs.create(new Path("/input"));
-        fos.write("hello world".getBytes());
+    public void testPut2(){
+        try(FSDataOutputStream fos = fs.create(new Path("/input"))){
+            fos.write("hello world".getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // 文件下载
@@ -88,7 +84,6 @@ public class HdfsClient {
     // 删除
     @Test
     public void testRm() throws IOException {
-
         // 参数解读：参数1：要删除的路径； 参数2 ： 是否递归删除
         // 删除文件
         //fs.delete(new Path("/jdk-8u212-linux-x64.tar.gz"),false);
@@ -121,7 +116,6 @@ public class HdfsClient {
 
         // 获取所有文件信息
         RemoteIterator<LocatedFileStatus> listFiles = fs.listFiles(new Path("/"), true);
-
         // 遍历文件
         while (listFiles.hasNext()) {
             LocatedFileStatus fileStatus = listFiles.next();
@@ -148,14 +142,14 @@ public class HdfsClient {
     public void testFile() throws IOException {
 
         FileStatus[] listStatus = fs.listStatus(new Path("/"));
-
-        for (FileStatus status : listStatus) {
-
-            if (status.isFile()) {
-                System.out.println("文件：" + status.getPath().getName());
-            } else {
-                System.out.println("目录：" + status.getPath().getName());
-            }
-        }
+        Arrays.stream(listStatus).parallel().forEach(System.out::println);
+//        for (FileStatus status : listStatus) {
+//
+//            if (status.isFile()) {
+//                System.out.println("文件：" + status.getPath().getName());
+//            } else {
+//                System.out.println("目录：" + status.getPath().getName());
+//            }
+//        }
     }
 }
