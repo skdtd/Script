@@ -66,7 +66,7 @@ public class HdfsClient {
 
     @Test
     public void testPut2(){
-        try(FSDataOutputStream fos = fs.create(new Path("/input"))){
+        try(FSDataOutputStream fos = fs.create(new Path("/src/main/util/input"))){
             fos.write("hello world".getBytes());
         } catch (IOException e) {
             e.printStackTrace();
@@ -106,7 +106,7 @@ public class HdfsClient {
         //fs.rename(new Path("/input/ss.txt"),new Path("/cls.txt"));
 
         // 目录更名
-        fs.rename(new Path("/input"), new Path("/output"));
+        fs.rename(new Path("/src/main/util/input"), new Path("/output"));
 
     }
 

@@ -10,9 +10,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class WordCountDriver{
+public class StatisticalFlowDriver {
 
-    public static class WordCountMapper extends Mapper<LongWritable, Text, Text, FlowBean> {
+    public static class StatisticalFlowMapper extends Mapper<LongWritable, Text, Text, FlowBean> {
         FlowBean bean = new FlowBean();
         Text outKey = new Text();
 
@@ -21,17 +21,19 @@ public class WordCountDriver{
             String[] split = value.toString().split("\t");
             bean.setUpFlow(Long.parseLong(split[1]));
             bean.setDownFlow(Long.parseLong(split[2]));
+            bean.setTotalFlow();
             outKey.set(split[0]);
             context.write(outKey, bean);
         }
     }
 
-    public static class WordCountReducer extends Reducer<Text, FlowBean, Text, FlowBean> {
-        FlowBean bean = new FlowBean();
+    public static class StatisticalFlowReducer extends Reducer<Text, FlowBean, Text, FlowBean> {
+        FlowBean bean;
 
         @Override
         protected void reduce(Text key, Iterable<FlowBean> values, Reducer<Text, FlowBean, Text, FlowBean>.Context context) throws IOException, InterruptedException {
             for (FlowBean value : values) {
+                bean = new FlowBean();
                 bean.setUpFlow(value.getUpFlow() + bean.getUpFlow());
                 bean.setDownFlow(value.getDownFlow() + bean.getDownFlow());
                 bean.setTotalFlow();
