@@ -15,8 +15,6 @@ public class Demo {
 
     /**
      * 删除文件夹
-     *
-     * @param file
      */
     private static void delDir(File file) {
         if (file.isDirectory()) {
@@ -46,11 +44,13 @@ public class Demo {
      * 创建Flow数据
      */
     @Test
+    @SuppressWarnings("all")
     public void createStatisticalFlowData() {
         int lines = 10000;
         Random r = new Random();
         String base = "NO%02d\t%04d\t%04d\n";
         File file = new File("src/main/util/StatisticalFlowData");
+        file.mkdirs();
         while (file.exists()) {
             file = new File("src/main/util/StatisticalFlowData/data" + r.nextInt(100));
         }
@@ -64,19 +64,21 @@ public class Demo {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     /**
      * 创建Phone数据
      */
     @Test
+    @SuppressWarnings("all")
     public void PhoneData() {
         int lines = 10000;
         Random r = new Random();
         File file;
         // create brand
         String brand = "001 MI\n002 HUAWEI\n003 OPPO\n004 VIVO\n005 NOKIA\n006 SAMSUNG";
+        file = new File("src/main/util/PhoneData");
+        file.mkdirs();
         file = new File("src/main/util/PhoneData/brand1");
         if (!file.exists()) {
             try (FileOutputStream fos = new FileOutputStream(file)) {

@@ -2,3 +2,4 @@
 target
 out
 util
+pyqtDemo/src/**/__pycache__
