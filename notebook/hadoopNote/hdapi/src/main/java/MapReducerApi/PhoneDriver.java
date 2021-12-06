@@ -1,41 +1,50 @@
 package MapReducerApi;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 public class PhoneDriver {
 
-    public static void run(String inPath, String outPath) throws IOException, InterruptedException, ClassNotFoundException {
+    public static void run(String inPath, String outPath) throws IOException, InterruptedException, ClassNotFoundException, URISyntaxException {
         Configuration c = new Configuration();
         Job job = Job.getInstance(c);
         job.setJarByClass(PhoneDriver.class);
 
         // 设置Mapper和Reducer
         job.setMapperClass(PhoneMapper.class);
-        job.setReducerClass(PhoneReducer.class);
+        job.setCombinerClass(PhoneCombiner.class);
+        job.setReducerClass(PhoneCombiner.class);
         // 设置map阶段输出
         job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(Phone.class);
+        job.setMapOutputValueClass(LongWritable.class);
 
-        // 设置最终输出
+//        // 设置最终输出
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(Phone.class);
+        job.setOutputValueClass(LongWritable.class);
+
+        // 设置文件缓存
+        job.addCacheFile(new URI("src/main/util/PhoneData/brand1"));
+
+        // 关闭Reduce阶段
+        job.setNumReduceTasks(1);
 
         // 设置文件输入路径
         FileInputFormat.setInputPaths(job, new Path(inPath));
@@ -45,135 +54,57 @@ public class PhoneDriver {
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 
-    public static class PhoneMapper extends Mapper<LongWritable, Text, Text, Phone> {
-        Phone phone = new Phone();
-        Text outKey = new Text();
+    public static class PhoneMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
+        private final Text outKey = new Text();
+        private final LongWritable outValue = new LongWritable();
+        private final HashMap<String, String> map = new HashMap<>();
+        private final String reg = "\\s+|\t";
 
         @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
-            context.getConfiguration();
+        protected void setup(Context context) throws IOException {
+            URI[] files = context.getCacheFiles();
             FileSystem fs = FileSystem.get(context.getConfiguration());
+            FSDataInputStream fis;
+            BufferedReader br;
+            for (URI file : files) {
+                fis = fs.open(new Path(file));
+                br = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8));
+                String line;
+                while (StringUtils.isNoneEmpty(line = br.readLine())) {
+                    String[] split = line.split(reg);
+                    if (split.length == 2) {
+                        map.put(split[0], split[1]);
+                    }
+                }
+                br.close();
+                fis.close();
+            }
         }
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            String[] split = value.toString().split("(\\s+|\t+)");
+            String[] split = value.toString().split(reg);
             if (split.length == 3) {
-                phone.setId(split[1]);
-                phone.setType(split[0]);
-                phone.setStock(split[2]);
-                phone.setBrand("");
-            } else {
-                phone.setId(split[0]);
-                phone.setType("");
-                phone.setStock("");
-                phone.setBrand(split[1]);
+                outKey.set(String.format("%s\t%s", map.get(split[1]), split[0]));
+                outValue.set(Long.parseLong(split[2]));
+                context.write(outKey, outValue);
             }
-            outKey.set(phone.getId());
-            context.write(outKey, phone);
         }
     }
 
-    public static class PhoneReducer extends Reducer<Text, Phone, Phone, NullWritable> {
-        Phone phone;
-        HashMap<String, String> map = new HashMap<>();
-        String brand = null;
+    public static class PhoneCombiner extends Reducer<Text, LongWritable, Text, LongWritable> {
+        private final Text outKey = new Text();
+        private final LongWritable outValue = new LongWritable();
 
         @Override
-        protected void reduce(Text key, Iterable<Phone> values, Context context) {
-            map.clear();
-            for (Phone value : values) {
-                if (value.getBrand() == null || "".equals(value.getBrand())) {
-                    if (map.get(value.getType()) == null || "".equals(value.getType())) {
-                        map.put(value.getType(), value.getStock());
-                    } else {
-                        int stock = Integer.parseInt(value.getStock());
-                        int st = Integer.parseInt(map.get(value.getType()));
-                        map.put(value.getType(), stock + st + "");
-                    }
-                } else {
-                    brand = value.getBrand();
-                }
+        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+            long sum = 0;
+            for (LongWritable value : values) {
+                sum += value.get();
             }
-            map.forEach((k, v) -> {
-                phone = new Phone();
-                phone.setBrand(brand);
-                phone.setType(k);
-                phone.setStock(v);
-                try {
-                    context.write(phone, NullWritable.get());
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-    }
-
-    public static class Phone implements Writable, WritableComparable<Phone> {
-        private String brand;
-        private String type;
-        private String stock;
-        private String id;
-
-        public String getBrand() {
-            return brand;
-        }
-
-        public void setBrand(String brand) {
-            this.brand = brand;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        public String getStock() {
-            return stock;
-        }
-
-        public void setStock(String stock) {
-            this.stock = stock;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-
-        @Override
-        public String toString() {
-            return String.format("%s\t%s\t%s", this.brand, this.type, this.stock);
-        }
-
-        @Override
-        public int compareTo(Phone o) {
-            return Integer.parseInt(this.stock) - Integer.parseInt(o.stock) > 0 ? 1 : -1;
-        }
-
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeUTF(this.id);
-            out.writeUTF(this.brand);
-            out.writeUTF(this.type);
-            out.writeUTF(this.stock);
-
-        }
-
-        @Override
-        public void readFields(DataInput in) throws IOException {
-            this.id = in.readUTF();
-            this.brand = in.readUTF();
-            this.type = in.readUTF();
-            this.stock = in.readUTF();
-
+            outKey.set(key);
+            outValue.set(sum);
+            context.write(outKey, outValue);
         }
     }
 }

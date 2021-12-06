@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Random;
 
 public class Demo {
@@ -16,6 +17,7 @@ public class Demo {
     /**
      * 删除文件夹
      */
+    @SuppressWarnings("all")
     private static void delDir(File file) {
         if (file.isDirectory()) {
             File[] files = file.listFiles();
@@ -29,7 +31,7 @@ public class Demo {
     }
 
     @Test
-    public void runPhoneMR() throws IOException, InterruptedException, ClassNotFoundException {
+    public void runPhoneMR() throws IOException, InterruptedException, ClassNotFoundException, URISyntaxException {
         inPath = "src/main/util/PhoneData";
         PhoneDriver.run(inPath, outPath);
     }
