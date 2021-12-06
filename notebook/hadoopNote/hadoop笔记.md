@@ -288,6 +288,33 @@ Array     |ArrayWritable
 Null      |NullWritable
 
 # YARN(Yet Another Resource Negotiator)(负责资源管理)
+## 命令
+```bash
+# 查看任务状态
+yarn application -list -appStates <tag>
+# tag: all new new_saving submitted accepted running finished failed killed
+
+# 结束任务
+yarn application -kill <application_id>
+
+# 查看Application日志
+yarn logs -applicationId <application_id>
+
+# 查看Container日志
+yarn logs -applicationId <application_id> -containerId <container_id>
+
+# 查看尝试运行的任务
+yarn applicationattempt -list <application_id>
+
+# 打印尝试运行的任务状态
+yarn applicationattempt -status <application_id>
+
+# 查看容器
+yarn container -list <application_id>
+
+# 打印容器状态
+yarn container -status <container_id>
+```
 # 生产调优手册
 # Hadoop源码解析
 
