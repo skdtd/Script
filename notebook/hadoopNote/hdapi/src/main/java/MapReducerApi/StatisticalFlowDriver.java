@@ -67,7 +67,7 @@ public class StatisticalFlowDriver {
     public static class StatisticalFlowOutPutFormat extends FileOutputFormat<Text, FlowBean> {
 
         @Override
-        public RecordWriter<Text, FlowBean> getRecordWriter(TaskAttemptContext job) throws IOException, InterruptedException {
+        public RecordWriter<Text, FlowBean> getRecordWriter(TaskAttemptContext job) {
             return new FlowRecordWriter(job);
         }
 
@@ -135,6 +135,7 @@ public class StatisticalFlowDriver {
     /**
      * 当把自定义bean作为key时必须实现WritableComparable
      */
+    @SuppressWarnings("unused")
     private static class FlowBean implements Writable, WritableComparable<FlowBean> {
         private long upFlow;
         private long downFlow;

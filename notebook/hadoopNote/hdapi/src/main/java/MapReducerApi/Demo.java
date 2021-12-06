@@ -11,8 +11,8 @@ import java.net.URISyntaxException;
 import java.util.Random;
 
 public class Demo {
-    String inPath;
-    String outPath = "src/main/util/out";
+    private final static String outPath = "src/main/util/out";
+    private static String inPath;
 
     /**
      * 删除文件夹
