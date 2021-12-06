@@ -1,8 +1,13 @@
 package MapReducerApi;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -43,6 +48,12 @@ public class PhoneDriver {
     public static class PhoneMapper extends Mapper<LongWritable, Text, Text, Phone> {
         Phone phone = new Phone();
         Text outKey = new Text();
+
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            context.getConfiguration();
+            FileSystem fs = FileSystem.get(context.getConfiguration());
+        }
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
