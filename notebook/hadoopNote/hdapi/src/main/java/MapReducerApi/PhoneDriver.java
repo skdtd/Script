@@ -36,12 +36,12 @@ public class PhoneDriver {
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(LongWritable.class);
 
-//        // 设置最终输出
+        // 设置最终输出
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(LongWritable.class);
 
         // 设置文件缓存
-        job.addCacheFile(new URI("src/main/util/PhoneData/brand1"));
+        job.addCacheFile(new URI("src/main/util/PhoneData/brand"));
 
         // 关闭Reduce阶段
         job.setNumReduceTasks(1);

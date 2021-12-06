@@ -30,6 +30,7 @@ public class Demo {
         file.delete();
     }
 
+
     @Test
     public void runPhoneMR() throws IOException, InterruptedException, ClassNotFoundException, URISyntaxException {
         inPath = "src/main/util/PhoneData";
@@ -81,7 +82,7 @@ public class Demo {
         String brand = "001 MI\n002 HUAWEI\n003 OPPO\n004 VIVO\n005 NOKIA\n006 SAMSUNG";
         file = new File("src/main/util/PhoneData");
         file.mkdirs();
-        file = new File("src/main/util/PhoneData/brand1");
+        file = new File("src/main/util/PhoneData/brand");
         if (!file.exists()) {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(brand.getBytes());
