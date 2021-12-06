@@ -27,7 +27,7 @@ public class PhoneDriver {
         Configuration c = new Configuration();
         Job job = Job.getInstance(c);
         job.setJarByClass(PhoneDriver.class);
-
+        
         // 设置Mapper和Reducer
         job.setMapperClass(PhoneMapper.class);
         job.setCombinerClass(PhoneCombiner.class);

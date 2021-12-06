@@ -99,6 +99,14 @@ core-site.xml
   <value>/opt/hadoop-3.3.1/data</value>
   <description>数据存储目录</description>
 </property>
+<property>
+  <name>io.compression.codecs</name>
+  <value></value>
+  <description>
+    设置Map输入阶段压缩
+    集群执行(hadoop checknative)查看可选参数
+  </description>
+</property>
 ```
 hdfs-site.xml
 ```xml
@@ -207,6 +215,26 @@ mapred-site.xml
   <name>mapreduce.jobhistory.webapp.address</name>
   <value>hd04:19888</value>
   <description>历史服务器web端</description>
+</property>
+<property>
+  <name>mapreduce.map.output.compress</name>
+  <value>false</value>
+  <description>是否开启Map输出阶段压缩</description>
+</property>
+<property>
+  <name>mapreduce.map.output.compress.codec</name>
+  <value>org.apache.hadoop.io.compress.DefaultCodec</value>
+  <description>当开启Map输出阶段压缩时,选择何种压缩方式</description>
+</property>
+<property>
+  <name>mapreduce.output.fileoutputformat.compress</name>
+  <value>false</value>
+  <description>是否开启Reduce输出阶段压缩</description>
+</property>
+<property>
+  <name>mapreduce.output.fileoutputformat.compress.codec</name>
+  <value>org.apache.hadoop.io.compress.DefaultCodec</value>
+  <description>当开启Reduce输出阶段压缩时,选择何种压缩方式</description>
 </property>
 ```
 ## 生产环境不能连接外网时,需要时间同步
