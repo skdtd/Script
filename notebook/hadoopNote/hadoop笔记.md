@@ -164,6 +164,7 @@ hdfs-site.xml
 
 ```
 yarn-site.xml
+## 如果服务器配置不一致,则需要单独节点进行配置
 ```xml
 <property>
    <description>指定yarm使用shuffle</description>
@@ -178,7 +179,7 @@ yarn-site.xml
 <property>
    <description>
       基础系统环境变量(3.1版本需要配置HADOOP_MAPRED_HOME,3.2以上无需额外配置该项)
-      # 3.3版本貌似还是需要配置
+      (3.3版本貌似还是需要配置)
    </description>
    <name>yarn.nodemanager.env-whitelist</name>
    <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_HOME,PATH,LANG,TZ,HADOOP_MAPRED_HOME</value>
@@ -197,6 +198,82 @@ yarn-site.xml
    <description>日志保存时间(7天)</description>
    <name>yarn.log-aggregation.retain-seconds</name>
    <value>604800</value>
+</property>
+<property>
+  <description>配置调度器,默认容量调度器</description>
+  <name>yarn.resourcemanager.scheduler.class</name>
+  <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</value>
+</property>
+<property>
+  <description>处理客户端的请求线程数,不要超过CPU总线程数</description>
+  <name>yarn.resourcemanager.resource-tracker.client.thread-count</name>
+  <value>50</value>
+</property>
+<property>
+  <description>是否将虚拟CPU核数当作CPU核数</description>
+  <name>yarn.nodemanager.resource.count-logical-processors-as-cores</name>
+  <value>false</value>
+</property>
+<property>
+  <description>虚拟CPU核数与物理CPU核数的比例</description>
+  <name>yarn.nodemanager.resource.pcores-vcores-multiplier</name>
+  <value>1.0</value>
+</property>
+<property>
+  <description>启用自动检测节点功能,如内存和CPU。</description>
+  <name>yarn.nodemanager.resource.detect-hardware-capabilities</name>
+  <value>false</value>
+</property>
+<property>
+  <description>物理内存检测,默认打开</description>
+  <name>yarn.nodemanager.pmem-check-enabled</name>
+  <value>true</value>
+</property>
+<property>
+  <description>虚拟内存检查,默认打开(CentOS与Java8之间内存使用政策不同,需要关闭)</description>
+  <name>yarn.nodemanager.vmem-check-enabled</name>
+  <value>false</value>
+</property>
+<property>
+  <description>
+    nodemanager使用的内存量,默认8G
+    如果设置为-1且yarn.nodemanager.resource.detect-hardware-capabilities为true,则会自动计算该值(对于Windows和Linux)
+  </description>
+  <name>yarn.nodemanager.resource.memory-mb</name>
+  <value>-1</value>
+</property>
+<property>
+  <description>
+    nodemanager使用的CPU核数,默认8核
+    如果设置为-1且yarn.nodemanager.resource.detect-hardware-capabilities为true,则会自动计算该值(对于Windows和Linux)
+  </description>
+  <name>yarn.nodemanager.resource.cpu-vcores</name>
+  <value>-1</value>
+</property>
+<property>
+  <description>容器最小内存使用量</description>
+  <name>yarn.scheduler.minimum-allocation-mb</name>
+  <value>1024</value>
+</property>
+<property>
+  <description>容器最大内存使用量</description>
+  <name>yarn.scheduler.maximum-allocation-mb</name>
+  <value>8192</value>
+</property>
+<property>
+  <description>容器最小CPU核数</description>
+  <name>yarn.scheduler.minimum-allocation-vcores</name>
+  <value>1</value>
+</property>
+<property>
+  <description>容器最大CPU核数</description>
+  <name>yarn.scheduler.maximum-allocation-vcores</name>
+  <value>4</value>
+</property>
+<property>
+  <description>开启优先级等级(0: 没有优先级, 任意数字代表多少个优先级等级)</description>
+  <name>yarn.cluster.max-application-priority</name>
+  <value>0</value>
 </property>
 ```
 mapred-site.xml
@@ -237,6 +314,71 @@ mapred-site.xml
   <description>当开启Reduce输出阶段压缩时,选择何种压缩方式</description>
 </property>
 ```
+capacity-scheduler.xml
+```xml
+<property>
+  <name>yarn.scheduler.capacity.maximum-applications</name>
+  <value>10000</value>
+  <description>最多支持多少任务同时等待或者运行</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.maximum-am-resource-percent</name>
+  <value>0.1</value>
+  <description>单任务可占用最大资源比</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.queues</name>
+  <value>{队列名称},{队列名称}</value>
+  <description>队列名称(用逗号分隔)</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.capacity</name>
+  <value>100</value>
+  <description>队列占总资源的比例(0-100)</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.user-limit-factor</name>
+  <value>1</value>
+  <description>单用户可使用集群最大资源比例(0.0-1.0)</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.maximum-capacity</name>
+  <value>100</value>
+  <description>队列最大容量(队列资源不足时向其他队列借用资源时)</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.state</name>
+  <value>RUNNING</value>
+  <description>队列状态(RUNNING or STOPPED)</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.acl_submit_applications</name>
+  <value>*</value>
+  <description>可以向该队列提交任务的用户</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.acl_administer_queue</name>
+  <value>*</value>
+  <description>拥有队列操作权限的用户(查看,结束任务等等)</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.acl_application_max_priority</name>
+  <value>*</value>
+  <description>可以设置队列优先级的用户</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.maximum-application-lifetime
+  </name>
+  <value>-1</value>
+  <description>任务最大可以执行时间(用户指定无法超过该时长)</description>
+</property>
+<property>
+  <name>yarn.scheduler.capacity.root.{队列名称}.default-application-lifetime
+  </name>
+  <value>-1</value>
+  <description>默认任务最大执行时间</description>
+</property>
+```
 ## 生产环境不能连接外网时,需要时间同步
 1. 安装ntp: `yum install ntp.x86_64`
 2. 配置时间服务器: `/etc/ntp.conf`
@@ -262,13 +404,16 @@ mapred-site.xml
    ```
 ## shell的操作
 ```bash
-#创建文件夹
+# 创建文件夹
 hadoop fs -mkdir /input
-#上传文件
+# 上传文件
 hadoop fs -put file /input
 
-#启动任务
-hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount /input /out1
+# 启动任务
+# -D mapreduce.job.queuename={队列名称} 提交任务到指定队列
+# -D mapreduce.job.priority={优先级}    提交任务指定优先级
+# 代码中直接conf.set("mapreduce.job.queuename","{队列名称}")指定提交队列
+hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount -D mapreduce.job.queuename=default -D mapreduce.job.priority=5 /input /out
 ```
 ## API的操作
 > [编译windows版本](https://cwiki.apache.org/confluence/display/HADOOP2/Hadoop2OnWindows)
@@ -314,11 +459,15 @@ yarn container -list <application_id>
 
 # 打印容器状态
 yarn container -status <container_id>
+
+# 更新任务执行时间
+yarn application -appId <application_id> -updateLifetime <timeout>
+
+# 更新任务执行优先级
+yarn application -appId <application_id> -updatePriority <priority>
+
+# 刷新yarn队列
+yarn rmadmin -refreshQueues
 ```
 # 生产调优手册
 # Hadoop源码解析
-
-
-
-
-windows编译hadoop https://www.cnblogs.com/jhxxb/p/10765815.html
