@@ -393,7 +393,7 @@ capacity-scheduler.xml
   <description>默认任务最大执行时间</description>
 </property>
 ```
-capacity-scheduler.xml
+[fair-scheduler.xml](https://blog.cloudera.com/untangling-apache-hadoop-yarn-part-4-fair-scheduler-queue-basics/)
 ```xml
 <allocations>
   <!-- 单个队列中Application Master占资源的最大比例(0.0-1.0) -->
@@ -483,7 +483,7 @@ hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.
 > [编译windows版本](https://cwiki.apache.org/confluence/display/HADOOP2/Hadoop2OnWindows)
 # MapReduce(负责数据计算)
 ## 数据序列化对照
-Java类型  | Hadoop Writable类型
+Java类型  |Hadoop Writable类型
 :-        |:-
 boolean   |BooleanWritable
 byte      |ByteWritable
@@ -497,6 +497,17 @@ Array     |ArrayWritable
 Null      |NullWritable
 
 # YARN(Yet Another Resource Negotiator)(负责资源管理)
+## 工作机制
+## 调度器
+
+1.  FIFO/容量/公平
+2.  apache默认调度器:容量, CDH默认调度器: 公平
+3.  公平/容量默认一个队列: default, 多队列需要手动创建
+4.  多队列好处: 解耦 降级使用 降低风险
+5.  每个调度器特点:
+      相同点: 支持多队列,可以借调资源,支持多用户
+      不同点: 容量调度器优先满足先进入的任务执行, 公平调度器在队列中的任务公平享有队列资源
+6.  对并发要求不高的选择容量调度器, 对并发要求高的选择公平调度器
 ## 命令
 ```bash
 # 查看任务状态
@@ -533,5 +544,61 @@ yarn application -appId <application_id> -updatePriority <priority>
 # 刷新yarn队列
 yarn rmadmin -refreshQueues
 ```
-# 生产调优手册
+# 生产调优
+## HDFS核心参数配置
+> namenode内存计算
+>> 每个文件块大小为150byte,假设可用内存为128G时,可以存储的文件为128(GB) * 1024(MB) * 1024(KB) * 1024(Byte) / 150(Byte) 约等于 9.1 亿
+namenode最小值为1G,每增加100万个block时,增加1G(集群中)
+datenode最小值为4G,副本总数低于400万时,调整为4G. 超过400万,每增加100万个副本数时,增加1G(节点中)
+```bash
+# 修改etc/hadoop/hadoop-env.sh文件
+# namenode修改方式
+export HDFS_NAMENODE_OPTS="-Dhadoop.security.logger=INFO,RFAS -Xmx1024"
+# datanode修改法昂是
+export HDFS_DATANODE_OPTS="-Dhadoop.security.logger=ERROR,RFAS -Xmx1024"
+```
+## namenode心跳并发配置
+> hdfs-site.xml
+```xml
+<property>
+  <name>dfs.namenode.handler.count</name>
+  <value>10</value>
+  <description>工作线程池大小</description>
+</property>
+```
+```bash
+# 计算最佳线程池大小
+CLUSTER_SIZE= # 集群大小
+python << EOF
+import math
+print int(20 * math.log(${CLUSTER_SIZE}))
+EOF
+```
+## 开启回收站
+```xml
+<property>
+  <name>fs.trash.interval</name>
+  <value>0</value>
+  <description>0: 禁用回收站, 任意数字: 表示文件在回收站中存留的分钟数</description>
+</property>
+<property>
+  <name>fs.trash.checkpoint.interval</name>
+  <value>0</value>
+  <description>
+    检查回收站的间隔时间,
+    如果为0则表示与fs.trash.interval一致,
+    不能大于fs.trash.interval的值
+    只有在命令行中使用hadoop fs -rm命令删除的文件才会进入回收站,
+    web页面和代码中删除不会进入回收站
+  </description>
+</property>
+```
+```java
+// 代码中删除文件移动到回收站的方式
+Trash trash = new Trash(conf);
+trash.moveToTrash(Path)
+// 撤销删除的话移动回收站中的文件路径即可
+```
+## HDFS集群压测
+
 # Hadoop源码解析
