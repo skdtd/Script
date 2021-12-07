@@ -111,6 +111,16 @@ core-site.xml
 hdfs-site.xml
 ```xml
 <property>
+  <name>dfs.replication</name>
+  <value>3</value>
+  <description>默认副本数</description>
+</property>
+<property>
+  <name>dfs.storage.policy.enabled</name>
+  <value>true</value>
+  <description>是否打开文件存储策略</description>
+</property>
+<property>
   <name>dfs.namenode.http-address</name>
   <value>hd01:9870</value>
   <description>NameNode Web端访问地址</description>
@@ -477,7 +487,7 @@ hadoop fs -put file /input
 # -D mapreduce.job.queuename={队列名称} 提交任务到指定队列
 # -D mapreduce.job.priority={优先级}    提交任务指定优先级
 # 代码中直接conf.set("mapreduce.job.queuename","{队列名称}")指定提交队列
-hadoop jar /opt/hadoop-3.3.1/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount -D mapreduce.job.queuename=default -D mapreduce.job.priority=5 /input /out
+hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar wordcount -D mapreduce.job.queuename=default -D mapreduce.job.priority=5 /input /out
 ```
 ## API的操作
 > [编译windows版本](https://cwiki.apache.org/confluence/display/HADOOP2/Hadoop2OnWindows)
@@ -548,8 +558,8 @@ yarn rmadmin -refreshQueues
 ## HDFS核心参数配置
 > namenode内存计算
 >> 每个文件块大小为150byte,假设可用内存为128G时,可以存储的文件为128(GB) * 1024(MB) * 1024(KB) * 1024(Byte) / 150(Byte) 约等于 9.1 亿
-namenode最小值为1G,每增加100万个block时,增加1G(集群中)
-datenode最小值为4G,副本总数低于400万时,调整为4G. 超过400万,每增加100万个副本数时,增加1G(节点中)
+namenode最小值为1G,每增加100万个block时,增加1G`(集群中)`
+datenode最小值为4G,副本总数低于400万时,调整为4G. 超过400万,每增加100万个副本数时,增加1G`(节点中)`
 ```bash
 # 修改etc/hadoop/hadoop-env.sh文件
 # namenode修改方式
@@ -558,7 +568,7 @@ export HDFS_NAMENODE_OPTS="-Dhadoop.security.logger=INFO,RFAS -Xmx1024"
 export HDFS_DATANODE_OPTS="-Dhadoop.security.logger=ERROR,RFAS -Xmx1024"
 ```
 ## namenode心跳并发配置
-> hdfs-site.xml
+hdfs-site.xml
 ```xml
 <property>
   <name>dfs.namenode.handler.count</name>
@@ -575,6 +585,7 @@ print int(20 * math.log(${CLUSTER_SIZE}))
 EOF
 ```
 ## 开启回收站
+core-site.xml
 ```xml
 <property>
   <name>fs.trash.interval</name>
@@ -600,5 +611,132 @@ trash.moveToTrash(Path)
 // 撤销删除的话移动回收站中的文件路径即可
 ```
 ## HDFS集群压测
+```bash
+# 使用自带jarbao压测(数量确保每个节点都有启动task即可)
+hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.3.1-tests.jar TestDFSIO -write -nrFiles 10 -fileSize 128MB
+hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.3.1-tests.jar TestDFSIO -read -nrFiles 10 -fileSize 128MB
+```
+## namenode多目录
+hdfs-site.xml
+```xml
+<property>
+  <name>dfs.namenode.name.dir</name>
+  <value>file://${hadoop.tmp.dir}/dfs/name1,file://${hadoop.tmp.dir}/dfs/name2</value>
+  <description>namenode多目录</description>
+</property>
+```
+## datanode多目录
+> 扩容空间
+hdfs-site.xml
+```xml
+<property>
+  <name>dfs.datanode.data.dir</name>
+  <value>[SSD]file://${hadoop.tmp.dir}/dfs/data1,[RAM_DISK]file://${hadoop.tmp.dir}/dfs/data2</value>
+  <description>
+    datanode多目录,
+    可以主动声明存储类型来指定文件夹的存储介质
+    RAM_DISK, SSD, DISK, ARCHIVE
+  </description>
+</property>
+```
+## 磁盘数据均衡
+```bash
+# 1. 生成均衡计划(多硬盘才可以生成)
+hdfs diskbalancer -plan <host>
+# 2. 执行均衡计划
+hdfs diskbalancer -execute <host>.plan.json
+# 3. 查看当前均衡任务的执行情况
+hdfs diskbalancer -query <host>
+# 4. 取消均衡任务
+hdfs diskbalancer -cancel <host>.plan.json
+```
+## HDFS集群扩容和缩容
+> 配置白名单与黑名单
+>> 白名单: 白名单之外的节点`可以访问集群`,但是集群`不会将数据存储在白名单之外的节点`上</br>
+>>> 服役新节点时,添加好环境加入白名单刷新namenode即可</br>
+>>> 服役新节点后可以进行数据均衡来平衡空间利用率,尽量在比较`空闲的`节点上执行</br>
 
+>> 黑名单: 集群`不会将数据存储在黑名单之内的节点`上,但是黑名单之内的节点`可以访问集群`</br>
+>>> 退役节点时将节点添加到黑名单后刷新namenode即可</br>
+>>> 可以在退役之后进行数据均衡
+* 第一次配置时候必须重启集群, 往后只需要刷新namenode, 命令`hdfs dfsadmin -refreshNodes`
+```bash
+# 启动数据均衡
+start-balancer.sh -threshold 10  # -threshold 10: 节点之间利用率差额
+# 停止数据均衡
+stop-balancer.sh 
+```
+hdfs-site.xml
+```xml
+<property>
+  <name>dfs.hosts</name>
+  <value>${HADOOP_HOME}/etc/hadoop/whitelist</value>
+  <description>白名单</description>
+</property>
+<property>
+  <name>dfs.hosts.exclude</name>
+  <value>${HADOOP_HOME}/etc/hadoop/blacklist</value>
+  <description>黑名单</description>
+</property>
+```
+## HDFS存储优化
+> 纠删码
+>> `为指定路径设置纠删策略`,所有往此路径下存储的文件将应用该策略</br>
+>> 假设数据为300MB,将数据以1MB大小拆分,然后组合成3个100MB的数据单元,生成2个100M的校验单元</br>
+>> 如果数据不足1MB,则直接生成1MB的数据单元,和2个1MB的校验单元</br>
+>> 纠删码名称解释: `RS-3-2-1024k`</br>
+>> RS:    使用RS编码</br>
+>> 3-2:   每3个数据单元生成2个校验单元</br>
+>> 1024k: 每个单元大小是1024 * 1024 = 1048576
+```bash
+# 查看所有可用策略
+hdfs ec -listPolicies
+# 为指定路径设置策略
+hdfs ec -setPolicy -path <path> -policy <policy>
+```
+> 异构存储
+>> 主要解决不同的数据存储在不同类型的硬盘中达到最佳性能的问题</br>
+>> 存储类型:</br>
+>>> `RAM_DISK`: 内存镜像文件系统</br>
+>>> `SSD`: SSD固态硬盘</br>
+>>> `DISK`: 普通硬盘,HDFS中如果没有主动声明数据目录存储类型,默认都是DISK</br>
+>>> `ARCHIVE`: 没有特质那种存储介质,主要是计算能力比较弱而存储密度比较高的存储介质,用雷解决容量扩增的问题,一般用于归档</br>
+
+>> 存储粗略: (访问效率自上往下降低)
+>>> 策略ID|策略名称      |副本分布              |解释
+>>> :-    |:-           |:-                   |:-
+>>> 15    |Lazy_Persist |RAM_DISK:1, DISK:n-1 |一个副本保存在内存RAM_DISK中,其他保存在磁盘中
+>>> 12    |ALL_SSD      |SSD:n                |所有副本都保存在SSD中
+>>> 10    |One_SSD      |SSD:1, DISK:n-1      |一个副本保存在SSD中,其余保存在磁盘中
+>>> 7     |Hot(default) |DISK:n               |所有副本都包存在DISK中,这是默认的存储策略
+>>> 5     |Warm         |DISK:1, ARCHIVE:n-1  |一个副本保存在磁盘上,其余的保存在归档存储上
+>>> 2     |Cold         |ARCHIVE:n            |所有副本都保存在归档存储上
+```bash
+# 查看所有可用存储策略
+hdfs storagepolicies -listPolicies
+# 为指定路径(数据存储目录)设置指定的存储策略
+hdfs storagepolicies -setStoragePolicy -path <path> -policy <policy>
+# 为文件指定新的存储策略之后,移动文件至新的存储介质
+hdfs mover <path>
+# 获取指定路径(存储目录或文件)的存储策略
+hdfs storagepolicies -getStoragePolicy -path <path>
+# 取消存储策略(取消策略之后将使用父目录的策略,如果是根目录则重置为默认策略)
+hdfs storagepolicies -unsetStoragePolicy -path <path>
+# 查看文件快的分布
+hdfs fsck <path> -files -blocks -locations
+# 查看集群节点
+hadoop dfsadmin -report
+# 查看linux内存存储数据大小(max locked memory)
+ulimit -a
+```
+```xml
+<property>
+  <name>dfs.datanode.max.locked.memory</name>
+  <value>0</value>
+  <description>
+    当存储介质为RAM_DISK时,需要设定这个值,这个值需要大于dfs.block.size的值,
+    否则会写入客户端所在的DataNode节点的DISK磁盘,其余数据写入其他节点的DISK磁盘
+  </description>
+</property>
+```
 # Hadoop源码解析
