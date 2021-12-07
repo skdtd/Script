@@ -200,9 +200,23 @@ yarn-site.xml
    <value>604800</value>
 </property>
 <property>
-  <description>配置调度器,默认容量调度器</description>
+  <description>
+    配置调度器,默认容量调度器
+    容量调度器: org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler
+    公平调度器: org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.FairScheduler
+  </description>
   <name>yarn.resourcemanager.scheduler.class</name>
   <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</value>
+</property>
+<property>
+  <description>指定公平调度器配置文件</description>
+  <name>yarn.scheduler.fair.allocation.file</name>
+  <value>/fair-scheduler.xml</value>
+</property>
+<property>
+  <description>禁止队列间资源抢占</description>
+  <name>yarn.scheduler.fair.preemption</name>
+  <value>false</value>
 </property>
 <property>
   <description>处理客户端的请求线程数,不要超过CPU总线程数</description>
@@ -378,6 +392,56 @@ capacity-scheduler.xml
   <value>-1</value>
   <description>默认任务最大执行时间</description>
 </property>
+```
+capacity-scheduler.xml
+```xml
+<allocations>
+  <!-- 单个队列中Application Master占资源的最大比例(0.0-1.0) -->
+  <queueMaxAMShareDefault>0.5</queueMaxAMShareDefault>
+  <!-- 单个队列最大资源的默认值 -->
+  <queueMaxResourcesDefault>40000 mb,0vcores</queueMaxResourcesDefault>
+  <queue name="sample_queue">
+    <!-- 队列最小资源 -->
+    <minResources>10000 mb,0vcores</minResources>
+    <!-- 队列最大资源 -->
+    <maxResources>90000 mb,0vcores</maxResources>
+    <!-- 队列最大允许同时运行任务 -->
+    <maxRunningApps>50</maxRunningApps>
+    <!-- 队列中Application Master占用资源的最大比例 -->
+    <maxAMShare>0.1</maxAMShare>
+    <!-- 权重 -->
+    <weight>2.0</weight>
+    <!-- 队列策略 -->
+    <schedulingPolicy>fair</schedulingPolicy>
+    <queue name="sample_sub_queue">
+      <aclSubmitApps>charlie</aclSubmitApps>
+      <minResources>5000 mb,0vcores</minResources>
+    </queue>
+    <queue name="sample_reservable_queue">
+      <reservation></reservation>
+    </queue>
+  </queue>
+  <!-- Queue 'secondary_group_queue' is a parent queue and may have
+       user queues under it -->
+  <queue name="secondary_group_queue" type="parent">
+  <weight>3.0</weight>
+  <maxChildResources>4096 mb,4vcores</maxChildResources>
+  </queue>
+
+  <user name="sample_user">
+    <maxRunningApps>30</maxRunningApps>
+  </user>
+  <userMaxAppsDefault>5</userMaxAppsDefault>
+
+  <queuePlacementPolicy>
+    <rule name="specified" />
+    <rule name="primaryGroup" create="false" />
+    <rule name="nestedUserQueue">
+        <rule name="secondaryGroupExistingQueue" create="false" />
+    </rule>
+    <rule name="default" queue="sample_queue"/>
+  </queuePlacementPolicy>
+</allocations>
 ```
 ## 生产环境不能连接外网时,需要时间同步
 1. 安装ntp: `yum install ntp.x86_64`
