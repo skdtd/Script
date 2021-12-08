@@ -554,7 +554,7 @@ yarn application -appId <application_id> -updatePriority <priority>
 # 刷新yarn队列
 yarn rmadmin -refreshQueues
 ```
-# 生产调优
+# HDFS生产调优
 ## HDFS核心参数配置
 > namenode内存计算
 >> 每个文件块大小为150byte,假设可用内存为128G时,可以存储的文件为128(GB) * 1024(MB) * 1024(KB) * 1024(Byte) / 150(Byte) 约等于 9.1 亿
@@ -739,4 +739,325 @@ ulimit -a
   </description>
 </property>
 ```
+## namenode故障处理
+> 丢失namenode数据时,将secondarynamenode的文件复制到namenode上启动</br>
+> 近期操作未来得及同步的数据将会丢失
+## HDFS集群安全模式
+> 集群处于安全模式时,不能执行重要操作(写). 集群启动完成后自动推出安全模式
+```bash
+# 查看安全模式状态
+hdfs dfsadmin -safemode get
+# 进入安全模式
+hdfs dfsadmin -safemode enter
+# 离开安全模式
+hdfs dfsadmin -safemode leave
+# 等待退出安全模式
+hdfs dfsadmin -safemode wait
+```
+hdfs-site.xml
+```xml
+<property>
+  <name>dfs.namenode.safemode.threshold-pct</name>
+  <value>0.999f</value>
+  <description>副本数达到最小要求的block占总block的百分比时,退出安全模式(默认:0.999f, 只允许丢1个块)</description>
+</property>
+
+<property>
+  <name>dfs.namenode.safemode.min.datanodes</name>
+  <value>0</value>
+  <description>达到最小可用datanode数量时,推出安全模式(默认:0)</description>
+</property>
+
+<property>
+  <name>dfs.namenode.safemode.extension</name>
+  <value>30000</value>
+  <description>稳定时间(达到条件后,再等待指定时间后,退出安全模式)</description>
+</property>
+```
+## 慢磁盘监控
+```bash
+# 不要再系统所在磁盘测试,会导致系统崩溃
+# 下载测试工具
+yum install fio --downloadonly --downloaddir=./fio/
+# 作成配置文件
+tee fio.conf << EOF
+[global]
+ioengine=libaio
+direct=1
+thread=1
+norandommap=1
+randrepeat=0
+runtime=60
+ramp_time=6
+size=1g
+directory=/opt    # 修改为测试目录
+[read4k-rand]
+stonewall
+group_reporting
+bs=4k
+rw=randread
+numjobs=8
+iodepth=32
+[read64k-seq]
+stonewall
+group_reporting
+bs=64k
+rw=read
+numjobs=4
+iodepth=8
+[write4k-rand]
+stonewall
+group_reporting
+bs=4k
+rw=randwrite
+numjobs=2
+iodepth=4
+[write64k-seq]
+stonewall
+group_reporting
+bs=64k
+rw=write
+numjobs=2
+iodepth=4
+EOF
+# 执行测试
+fio fio.conf
+```
+## 小文件归档
+```bash
+# 启动yarn进程
+start-yarn.sh
+
+# 归档文件
+hadoop archive -archiveName <archiveName>.har -p <inputPath> <outputPath>
+
+# 查看归档
+hadoop fs -ls har:///<harPath>
+
+# 解档文件
+hadoop fs -cp har:///<harPath>/* <outputPath>
+```
+## 集群迁移
+> apache集群之间迁移(同类型节点拷贝, NN->NN,DN->DN)
+>> `hadoop distcp hdfs://hd01:8020/file hdfs://hd02:8020/file`
+# MapReduce生产经验
+> 自定义分区,减少数据倾斜
+>> 定义类,继承Partitioner抽象类,重写getPartition方法</br>
+>> 以下配置文件修改都为`mapred-site.xml`
+
+> 减少溢写次数
+>> 提高环形缓冲区大小和溢出阈值
+```xml
+<property>
+  <name>mapreduce.task.io.sort.mb</name>
+  <value>100</value>
+  <description>环形缓冲区大小</description>
+</property>
+<property>
+  <name>mapreduce.map.sort.spill.percent</name>
+  <value>0.80</value>
+  <description>环形缓冲区溢出阈值</description>
+</property>
+```
+> 增加每次Merge合并次数
+>> 提高合并次数
+```xml
+<property>
+  <name>mapreduce.task.io.sort.factor</name>
+  <value>10</value>
+  <description>每次merge合并次数</description>
+</property>
+```
+> 使用Combiner</br>
+```java
+job.setCombinerClass(XXXX.class)
+```
+
+> 减少磁盘IO
+```java
+conf.setBoolean("mapreduce.map.output.compress", true)
+conf.setClass("mapreduce.map.output.compress.codec", SnappyCodec.class, CompressionCodec.class)
+```
+> 提高MapTask内存上限制
+>> 原则上单个Task处理128MB数据需要1GB内存
+```xml
+<property>
+  <name>mapreduce.map.memory.mb</name>
+  <value>-1</value>
+  <description>MapTask内存上限</description>
+</property>
+```
+> 控制MapTask堆内存大小
+>> 提高java虚拟机内存限制,防止出现OOM
+```xml
+<property>
+  <name>mapreduce.map.java.opts</name>
+  <value></value>
+  <description>MapTask的java虚拟机内存</description>
+</property>
+```
+> 提高MapTask的CPU核数
+>> 计算密集型任务可以增加CPU核数提高效率
+```xml
+<property>
+  <name>mapreduce.map.cpu.vcores</name>
+  <value>1</value>
+  <description>MapTask的CPU核数</description>
+</property>
+```
+> 每个MapTask任务的最大重试次数
+>> 根据机器性能适当提高
+```xml
+<property>
+  <name>mapreduce.map.maxattempts</name>
+  <value>4</value>
+  <description>MapTask最大重试次数</description>
+</property>
+```
+> 提高Reduce的并行数
+```xml
+<property>
+  <name>mapreduce.reduce.shuffle.parallelcopies</name>
+  <value>5</value>
+  <description>Reduce的并行数</description>
+</property>
+```
+> 提高Buffer占Reduce的比例
+```xml
+<property>
+  <name>mapreduce.reduce.shuffle.input.buffer.percent</name>
+  <value>0.70</value>
+  <description>Buffer占Reduce的比例</description>
+</property>
+```
+> 提高写出时数据占用比例
+>> Buffer中数据达到指定比例时开始写入磁盘
+```xml
+<property>
+  <name>mapreduce.reduce.shuffle.merge.percent</name>
+  <value>0.66</value>
+  <description>Buffer写出时数据比例</description>
+</property>
+```
+> 提高ReduceTask的内存上限
+>> 原则上单个Task处理128MB数据需要1GB内存
+```xml
+<property>
+  <name>mapreduce.reduce.memory.mb</name>
+  <value>-1</value>
+  <description>ReduceTask的内存上限</description>
+</property>
+```
+> 控制ReduceTask堆内存大小
+>> 提高java虚拟机内存限制,防止出现OOM
+```xml
+<property>
+  <name>mapreduce.reduce.java.opts</name>
+  <value></value>
+  <description>ReduceTask的java虚拟机内存</description>
+</property>
+```
+> 提高ReduceTask的CPU核数
+```xml
+<property>
+  <name>mapreduce.reduce.cpu.vcores</name>
+  <value>1</value>
+  <description>ReduceTask的CPU核数</description>
+</property>
+```
+> 每个ReduceTask任务的最大重试次数
+>> 根据机器性能适当提高
+```xml
+<property>
+  <name>mapreduce.reduce.maxattempts</name>
+  <value>4</value>
+  <description>ReduceTask最大重试次数</description>
+</property>
+```
+> 修改ReduceTask申请资源时机
+```xml
+<property>
+  <name>mapreduce.job.reduce.slowstart.completedmaps</name>
+  <value>0.05</value>
+  <description>当MapTask完成一定百分比后ReduceTask开始申请资源</description>
+</property>
+```
+> 调整Block状态超时时间
+>> 如果每条数据的处理时间过长时,需要提高该参数
+```xml
+<property>
+  <name>mapreduce.task.timeout</name>
+  <value>600000</value>
+  <description>Task处于Block状态时超时时间</description>
+</property>
+```
+> 数据倾斜
+>> 1. 过滤空值,或者自定义分区将空值加入随机值打散,再二次聚合
+>> 2. map阶段提前处理,如: COmbiner, MapJoin
+>> 3. 设置多个reduce数
+# Yarn生产经验
+> 参考上方
+# 综合调优
+> 1. 采集数据时,就将小文件或小批数据合并成大文件再上传HDFS
+> 2. Hadoop Archive(存储方向),`文件归档为har`
+> 3. CombnineTextInputFormat(计算方向),`将多个小文件在切片过程中生成数量较少的切片`
+> 4. 开启uber模式
+> mapred-site.xml
+```xml
+<property>
+  <name>mapreduce.job.ubertask.enable</name>
+  <value>false</value>
+  <description>开启uber模式(用于处理小文件)</description>
+</property>
+
+<property>
+  <name>mapreduce.job.ubertask.maxmaps</name>
+  <value>9</value>jvm的最大重用次数(0-9)</description>
+</property>
+
+<property>
+  <name>mapreduce.job.ubertask.maxreduces</name>
+  <value>1</value>
+  <description>最大Reduce数量(0-1)</description>
+</property>
+
+<property>
+  <name>mapreduce.job.ubertask.maxbytes</name>
+  <value></value>
+  <description>最大数据输入量,不填则为dfs.block.size的值,(0-dfs.block.size)</description>
+</property>
+```
+> MapReduce计算性能
+```bash
+# 使用RandomWriter产生随机数,每个节点运行10个MapTask,每个MapTask产生约1G大小的二进制随机数
+hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar randomwriter random-data
+# 执行sort程序
+hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar sort random-data sorted-data
+# 验证是否已经排好序
+hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1.jar testmapredsort -sortInput random-data -sortOutput sorted-data
+```
 # Hadoop源码解析
+## NameNode启动流程
+1. 启动9870端口服务
+2. 加载镜像文件和编辑日志
+3. 初始化NN的RPC服务器
+4. NN启动资源检查
+5. NN对心跳超时判断
+6. 安全模式
+## DataNode启动流程
+1. 初始化DataXceiverServer
+2. 初始化HTTP服务
+3. 初始化DN的RPC服务器
+4. DN向NN注册
+5. 向NN发送心跳
+## HDFS上传流程
+> create创建过程
+1. DN向NN发起创建请求
+2. NN处理DN的创建请求
+3. DataStreamer启动流程
+> write上传过程
+1. 向DataStreamer的队列里面写数据
+2. 建立管道: 机架感知(块存储位置)
+3. 建立管道: Socket发送
+4. 建立管道: Socket接收
+5. 客户端接收DN写数据应答Response
