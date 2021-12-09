@@ -1061,3 +1061,150 @@ hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.1
 3. 建立管道: Socket发送
 4. 建立管道: Socket接收
 5. 客户端接收DN写数据应答Response
+> YARN
+1. Yarn客户端向RM提交作业
+2. RM启动MRAppMaster
+3. 调度器任务执行(YarnChild)
+4. 
+# Hadoop源码编译
+在联网节点下编译(至少4G内存,防止OOM)
+> 依赖包
+>> * [hadoop源码](https://dlcdn.apache.org/hadoop/common)
+>> * [JDK1.8](https://mirrors.tuna.tsinghua.edu.cn/AdoptOpenJDK/8/jdk/x64/linux/)
+>> * [Maven](https://dlcdn.apache.org/maven/maven-3/)
+>> * [Protocol](https://github.com/protocolbuffers/protobuf/releases/v2.5.0)
+>> * [Cmake](https://github.com/Kitware/CMake/releases/latest)
+>
+> 环境变量
+```bash
+export JAVA_HOME=
+export MAVEN_HOME=
+export PROTOC_HOME=
+export PATH=${PATH}:${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PROTOC_HOME}/bin
+```
+> 添加配置文件
+```bash
+# Maven仓库设置阿里源
+sed -i "/<\/mirrors>/i <mirror>\n<id>aliyunmaven</id>\n<mirrorOf>*</mirrorOf>\n<name>阿里云公共仓库</name>\n<url>https://maven.aliyun.com/repository/public</url>\n</mirror>" settings.xml
+```
+> 安装环境
+```bash
+# 安装工具
+yum install -y gcc* make snappy* bzip2* lzo* zlib* lz4* gzip* openssl* svn ncurses* autoconf automake libtool
+yum install -y epel-release
+yum install -y *zstd*
+# 安装cmake(文件目录下)
+./bootstrap
+make && make install
+cmake -version
+# 安装Protocol(文件目录下)
+./configure --prefix=<安装目录>
+make && make install
+```
+> 开始编译(源码目录下)
+```bash
+mvn clean package -DskipTests -Pdist,native -Dtar
+```
+
+
+## 全程编译脚本
+```bash
+#!/bin/bash
+
+declare -A DICT
+
+# 下载地址
+HADOOP_URL='https://dlcdn.apache.org/hadoop/common/hadoop-3.3.1/hadoop-3.3.1-src.tar.gz'
+JDK_URL='https://mirrors.tuna.tsinghua.edu.cn/AdoptOpenJDK/8/jdk/x64/linux/OpenJDK8U-jdk_x64_linux_hotspot_8u312b07.tar.gz'
+MAVEN_URL='https://dlcdn.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz'
+CMAKE_URL='https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1.tar.gz'
+PROTOCOL_URL='https://github.com/protocolbuffers/protobuf/releases/download/v2.5.0/protobuf-2.5.0.tar.gz'
+
+
+HADOOP_URL='/root/hadoop-3.3.1-src.tar.gz'
+JDK_URL='/root/OpenJDK8U-jdk_x64_linux_hotspot_8u312b07.tar.gz'
+MAVEN_URL='/root/apache-maven-3.6.3-bin.tar.gz'
+CMAKE_URL='/root/cmake-3.22.1.tar.gz'
+PROTOCOL_URL='/root/protobuf-2.5.0.tar.gz'
+
+
+# 解压目录
+WORKSPACE=/opt/hadoop_compile
+HADOOP_DIR=hadoop_source
+MAVEN_DIR=maven
+JDK_DIR=jdk
+CMAKE_DIR=cmake
+PROTOCOL_DIR=protocol
+
+DICT=(
+    ["${HADOOP_DIR}"]="${HADOOP_URL}"
+    ["${MAVEN_DIR}"]="${MAVEN_URL}"
+    ["${JDK_DIR}"]="${JDK_URL}"
+    ["${CMAKE_DIR}"]="${CMAKE_URL}"
+    ["${PROTOCOL_DIR}"]="${PROTOCOL_URL}"
+)
+
+# 检查文件是否存在,不存在则下载
+for DIR in "${!DICT[@]}"
+do
+    mkdir -p "${WORKSPACE}/${DIR}"
+    echo "检查文件: ${DIR}"
+    if [[ ! -f "${DICT[$DIR]}" || -f "${WORKSPACE}/${DIR}/$(basename ${DICT[$DIR]})" ]];then
+        echo "没有找到文件: ${DIR}"
+        echo "开始下载: ${DICT[$DIR]}"
+        curl -Lo "${WORKSPACE}/${DIR}/$(basename ${DICT[$DIR]})" "${DICT[$DIR]}"
+        echo -e "${DIR}下载完成\n"
+        DICT[$DIR]="${WORKSPACE}/${DIR}/$(basename ${DICT[$DIR]})"
+    fi
+done
+
+# 解压文件
+for DIR in "${!DICT[@]}"
+do
+    if [[ $(find "${WORKSPACE}/${DIR}" -mindepth 1 -maxdepth 1 -type d | wc -l) == 0  ]];then
+        echo "开始解压${DICT[$DIR]}"
+        echo "解压到${WORKSPACE}/${DIR}"
+        tar -zxvf "${DICT[$DIR]}" -C "${WORKSPACE}/${DIR}" >> /dev/null
+    fi
+    DICT[$DIR]=$(find "${WORKSPACE}/${DIR}" -mindepth 1 -maxdepth 1 -type d | tail -1)
+done
+
+# 安装工具
+# yum install -y gcc* make snappy* bzip2* lzo* zlib* lz4* gzip* openssl* svn ncurses* autoconf automake libtool
+# yum install -y epel-release
+# yum install -y *zstd*
+
+# 安装Protocol
+if [[ ! -d "$(dirname ${DICT[$PROTOCOL_DIR]})/protocol" ]];then
+    cd ${DICT[$PROTOCOL_DIR]} && ./configure --prefix="$(dirname ${DICT[$PROTOCOL_DIR]})/protocol"
+    cd ${DICT[$PROTOCOL_DIR]} && make && make install
+fi
+
+# 安装Cmake
+cmake -version > /dev/null 2>&1
+if [[ $? != 0 ]];then
+    cd ${DICT[$CMAKE_DIR]} && ./bootstrap
+    cd ${DICT[$CMAKE_DIR]} && make && make install
+fi
+
+# 写入环境变量
+# tee /etc/profile.d/hadoop_compile.sh << EOF
+export JAVA_HOME="${DICT[$JDK_DIR]}"
+export MAVEN_HOME="${DICT[$MAVEN_DIR]}"
+export PROTOC_HOME="$(dirname ${DICT[$PROTOCOL_DIR]})/protocol/protocol"
+export PATH=${PATH}:${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PROTOC_HOME}/bin
+# EOF
+
+# 增加Maven阿里源
+grep '阿里云公共仓库' "${DICT[$MAVEN_DIR]}/conf/settings.xml" > /dev/null 2>&1
+if [[ $? != 0 ]];then
+    sed -i "/<\/mirrors>/i <mirror>\n<id>aliyunmaven</id>\n<mirrorOf>*</mirrorOf>\n<name>阿里云公共仓库</name>\n<url>https://maven.aliyun.com/repository/public</url>\n</mirror>" "${DICT[$MAVEN_DIR]}/conf/settings.xml"
+fi
+
+# 开始编译
+cd ${DICT[$HADOOP_DIR]} && mvn clean package -DskipTests -Pdist,native -Dtar
+
+
+mkdir -p "${WORKSPACE}/dist"
+cp -p "${DICT[$HADOOP_DIR]}/hadoop-dist/target/hadoop*" "${WORKSPACE}/dist"
+```
