@@ -655,7 +655,7 @@ hdfs diskbalancer -cancel <host>.plan.json
 >> 白名单: 白名单之外的节点`可以访问集群`,但是集群`不会将数据存储在白名单之外的节点`上</br>
 >>> 服役新节点时,添加好环境加入白名单刷新namenode即可</br>
 >>> 服役新节点后可以进行数据均衡来平衡空间利用率,尽量在比较`空闲的`节点上执行</br>
-
+>>
 >> 黑名单: 集群`不会将数据存储在黑名单之内的节点`上,但是黑名单之内的节点`可以访问集群`</br>
 >>> 退役节点时将节点添加到黑名单后刷新namenode即可</br>
 >>> 可以在退役之后进行数据均衡
@@ -701,7 +701,7 @@ hdfs ec -setPolicy -path <path> -policy <policy>
 >>> `SSD`: SSD固态硬盘</br>
 >>> `DISK`: 普通硬盘,HDFS中如果没有主动声明数据目录存储类型,默认都是DISK</br>
 >>> `ARCHIVE`: 没有特质那种存储介质,主要是计算能力比较弱而存储密度比较高的存储介质,用雷解决容量扩增的问题,一般用于归档</br>
-
+>>
 >> 存储粗略: (访问效率自上往下降低)
 >>> 策略ID|策略名称      |副本分布              |解释
 >>> :-    |:-           |:-                   |:-
@@ -844,7 +844,7 @@ hadoop fs -cp har:///<harPath>/* <outputPath>
 > 自定义分区,减少数据倾斜
 >> 定义类,继承Partitioner抽象类,重写getPartition方法</br>
 >> 以下配置文件修改都为`mapred-site.xml`
-
+>
 > 减少溢写次数
 >> 提高环形缓冲区大小和溢出阈值
 ```xml
@@ -1170,9 +1170,9 @@ do
 done
 
 # 安装工具
-# yum install -y gcc* make snappy* bzip2* lzo* zlib* lz4* gzip* openssl* svn ncurses* autoconf automake libtool
-# yum install -y epel-release
-# yum install -y *zstd*
+yum install -y gcc* make snappy* bzip2* lzo* zlib* lz4* gzip* openssl* svn ncurses* autoconf automake libtool
+yum install -y epel-release
+yum install -y *zstd*
 
 # 安装Protocol
 if [[ ! -d "$(dirname ${DICT[$PROTOCOL_DIR]})/protocol" ]];then
