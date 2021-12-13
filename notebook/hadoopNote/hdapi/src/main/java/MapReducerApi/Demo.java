@@ -1,6 +1,8 @@
 package MapReducerApi;
 
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,6 +32,9 @@ public class Demo {
         file.delete();
     }
 
+    @Test
+    public void test1() {
+    }
 
     @Test
     public void runPhoneMR() throws IOException, InterruptedException, ClassNotFoundException, URISyntaxException {
