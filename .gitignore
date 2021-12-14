@@ -3,3 +3,4 @@ target
 out
 util
 pyqtDemo/src/**/__pycache__
+notebook/机器学习/**/__pycache__
