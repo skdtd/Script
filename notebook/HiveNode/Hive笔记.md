@@ -341,3 +341,75 @@ collection items terminated by '_'  -- 由于map和array用的分隔符需要统
 map keys terminated by ':'
 lines terminated by '\n';
 ```
+
+# DDL
+## 库相关操作
+```sql
+-- 创建库
+create database [if not exists] <databaseName>
+[comment 数据库描述]
+[location 数据库路径] -- 路径需要加引号
+[with dbproperties 描述属性]
+
+-- 显示数据库
+show databases;
+show databases like 'db_*'; -- 显示'db_'开头的数据库
+
+-- 显示数据库的描述信息
+desc database <databaseName>
+desc database extended <databaseName> -- 显示描述信息等额外信息
+
+-- 修改数据库描述属性
+alter database <databaseName> set dbproperties("createTime"="yyyy-MM-dd")
+
+-- 删除数据库
+drop database <databaseName>; -- 删除空数据库
+drop database <databaseName> cascade; -- 强制删除非空数据库
+```
+## 表相关操作
+```sql
+-- 创建表
+create [external] table [if not exists] <tableName> -- external: 外部表
+[(colName dataType [comment colComment], ...)] -- 列名, 数据类型, 列注释
+[comment tableComment] -- 表注释
+[partitioned by (colName dataType [comment colComment], ...)] -- 分区表
+[clustered by (colName dataType [comment colComment], ...)] -- 分桶表
+[sorted by (colName [asc|desc], ...)] into numBuckets buckets -- 分桶表参数
+[row format rowFormat] -- 定义行格式, 文件以逗号分隔字段示例示例: row format delimited fields terminated by ',';
+[stored as fileFormat] -- 文件格式
+[location hdfsPath] -- 表存储位置
+[tableproperties (key=value, ...)] -- 表额外属性
+[as selectStatement] -- 查询方式建表(参考别的表形式来建表)
+
+-- 删除表
+drop table <tableName>;
+
+-- 查看表属性
+desc formatted <tableName>;
+
+-- 修改表
+-- 修改表为外部表,管理表则改为FALSE
+alter table <tableName> set tblproperties('EXTERNAL'='TRUE'); -- 属性大小写敏感
+-- 重命名表
+alter table <tableName> rename to <newTableName>;
+-- 修改列
+alter table <tableName> change <oldCol> <newCol> <newType>;
+-- 增加列
+alter table <tableName> add (<col> <type>, ...)
+-- 替换(所有)列
+alter table <tableName> replace columns (<col> <type>, ...)
+
+```
+### 管理表和外部表
+* 通过`external`关键字创建的表为外部表
+* 管理表在删除表的时候`会删除元数据同步删除真实数据`
+* 外部表在删除表的时候`只会删除元数据,不会删除真实数据`
+# DML
+```sql
+-- 加载数据
+load data [local] inpath '<dataPath>' [overwrite] into table <tableName> [partition (partcol1=val1, ...)]
+-- local: 是否从系统本地加载, 没有该参数时,会将HDFS目录上的指定文件剪切到表目录
+-- inpath: 路径可以是全路径也可以是相对路径, 相对路径是以进入客户端的路径为基准
+-- overwrite: 是否覆盖数据, 否则添加文件
+-- partition: 上传到指定分区
+```

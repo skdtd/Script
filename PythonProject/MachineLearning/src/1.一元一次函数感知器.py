@@ -1,4 +1,4 @@
-import util.dataset as ds
+import utils.dataset as ds
 from matplotlib import pyplot as plt
 
 xs, ys = ds.get_beans(100)
