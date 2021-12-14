@@ -177,7 +177,7 @@ service mysql start
 
 echo "installation is complete!"
 echo "Please use the command to log in to MySQL and enter the initial password: ${MYSQL_WORKSPACE}/bin/mysql -uroot -p"
-echo " A temporary password is generated: alter user user() identified by 'yourpassword';"
+echo "Update your password: alter user user() identified by 'yourpassword';"
 ```
 
 
