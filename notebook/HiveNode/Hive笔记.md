@@ -16,8 +16,6 @@
 # [Hive安装启动](https://cwiki.apache.org/confluence/display/Hive/GettingStarted)
 ## 下载地址
 > * [Hive](https://dlcdn.apache.org/hive/)
-> * [MySQL5.7](https://mirrors.tuna.tsinghua.edu.cn/mysql/downloads/MySQL-5.7/mysql-5.7.34-el7-x86_64.tar.gz)
-> * [MySQL驱动(Java)](https://mirrors.tuna.tsinghua.edu.cn/mysql/downloads/Connector-J/)
 ## 解压hive并配置环境变量
 ```bash
 # 环境变量
@@ -30,11 +28,27 @@ tar -zxvf <Hive压缩包> -C ${HIVE_HOME}
 # 解决日志冲突
 mv ${HIVE_HOME}/lib/log4j-slf4j-impl-2.10.0.jar ${HIVE_HOME}/lib/log4j-slf4j-impl-2.10.0.jar.bak
 
+# 跟踪客户端日志
+tail -fn0 /tmp/$(id -un)/hive.log
+```
+## 启动hive
+```bash
 # 启动客户端, 启动前需要初始化元数据
 hive
 
-# 跟踪客户端日志
-tail -fn0 /tmp/$(id -un)/hive.log
+# 参数配置的优先级
+# hive-default.xml < hive-site.xml < 命令行 < 客户端内set(用户代码)
+
+# hive会同通过环境变量获取hadoop配置信息,可以在hive中指定hadoop的配置
+
+# 命令行形式
+hive -hiveconf mapred.reduce.tasks=10
+
+# 客户端内set形式
+set mapred.reduce.tasks=10
+
+# 客户端内查看配置信息
+set mapred.reduce.tasks
 ```
 ### 初始化元数据
 1. derby(默认)
@@ -47,6 +61,21 @@ cd ${HIVE_HOME} && schematool -dbType derby -initSchema
 > [安装](https://www.linuxidc.com/Linux/2019-12/161832.htm)
 >> * [下载MySQL5.7](https://mirrors.tuna.tsinghua.edu.cn/mysql/downloads/MySQL-5.7/mysql-5.7.34-el7-x86_64.tar.gz)
 >> * [下载libaio](https://mirrors.aliyun.com/centos/7.9.2009/os/x86_64/Packages/libaio-0.3.109-13.el7.x86_64.rpm)
+>> * [MySQL驱动(Java)](https://mirrors.tuna.tsinghua.edu.cn/mysql/downloads/Connector-J/)
+>> 安装完成之后使用`schematool -dbType mysql -initSchema -verbose`初始化元数据库
+>
+> MySQL授权登录(not allowed to connect to this MySQL server)
+>> 让root用户从任何主机使用密码登录到mysql服务器
+>>> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;
+>>
+>> 让root用户从192.168.100.100使用密码登录到mysql服务器
+>>> GRANT ALL PRIVILEGES ON *.* TO 'root'@'192.168.100.100' IDENTIFIED BY 'password' WITH GRANT OPTION;
+>>
+>> 让root用户从192.168.100.100使用密码登录到mysql服务器的metastore数据库
+>>> GRANT ALL PRIVILEGES ON metastore.* TO 'root'@'192.168.100.100' IDENTIFIED BY 'password' WITH GRANT OPTION;
+>>
+>> 最后都需要`FLUSH PRIVILEGES;`更新权限
+
 ```bash
 #!/bin/bash
 
@@ -69,6 +98,17 @@ MYSQL_GOURP='mysql'
 # 包下载地址
 MYSQL_URL='https://mirrors.tuna.tsinghua.edu.cn/mysql/downloads/MySQL-5.7/mysql-5.7.34-el7-x86_64.tar.gz'
 LIBAIO_URL='https://mirrors.aliyun.com/centos/7.9.2009/os/x86_64/Packages/libaio-0.3.109-13.el7.x86_64.rpm'
+DRIVER_URL='https://mirrors.tuna.tsinghua.edu.cn/mysql/downloads/Connector-J/mysql-connector-java-5.1.49.tar.gz'
+
+# 卸载自带mariadb
+echo "Uninstall mariadb"
+rpm -e --nodeps mariadb-libs >& /dev/null
+
+# 下载驱动
+echo "download MySQL Driver"
+curl -L "${DRIVER_URL}" -o "/tmp/$(basename ${DRIVER_URL})"
+cd ${HIVE_HOME}/lib && tar -zxf "/tmp/$(basename ${DRIVER_URL})" "$(tar tf /tmp/$(basename ${DRIVER_URL})  | grep jar | sort | tail -1)" --strip-components=1 -C .
+chown --reference=${HIVE_HOME}/lib ${HIVE_HOME}/lib/*
 
 # 检查MySQL安装包位置, 如不存在则下载
 if [[ ! -f "${MYSQL_SRC}" ]];then
@@ -182,50 +222,122 @@ echo "installation is complete!"
 echo "Please use the command to log in to MySQL and enter the initial password: ${MYSQL_WORKSPACE}/bin/mysql -uroot -p"
 echo " A temporary password is generated: alter user user() identified by 'yourpassword';"
 ```
-
-
-
-```bash
-# 卸载系统自带的MySQL
-sudo rpm -qa | grep mariadb
-sudo rpm -e --nodeps mariadb-libs
+## 配置
+hive-site.xml
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:mysql://hd01:3306/metastore?useSSL=false</value>
+    <description>
+      元数据库连接的URL
+      需要创建元数据库,数据库名一致
+      create database metastore;
+    </description>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>com.mysql.jdbc.Driver</value>
+    <description>元数据库连接的Driver</description>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>root</value>
+    <description>元数据库用户名</description>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>000000</value>
+    <description>元数据库密码</description>
+  </property>
+  <property>
+    <name>hive.metastore.schema.verification</name>
+    <value>false</value>
+    <description>元数据存储版本验证</description>
+  </property>
+  <property>
+    <name>hive.metastore.event.db.notification.api.auth</name>
+    <value>false</value>
+    <description>元数据存储授权</description>
+  </property>
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>/user/hive/warehouse</value>
+    <description>默认HDFS的存储目录</description>
+  </property>
+  <property>
+    <name>hive.cli.print.current.db</name>
+    <value>true</value>
+    <description>客户端打印输出库</description>
+  </property>
+  <property>
+    <name>hive.cli.print.header</name>
+    <value>true</value>
+    <description>客户端打印输出表头</description>
+  </property>
+</configuration>
 ```
-> 配置
-${HIVE_HOME}/conf/hive-site.xml
+## 使用元数据服务的方式访问Hive
+hive-site.xml
 ```xml
 <property>
-  <name>javax.jdo.option.ConnectionURL</name>
-  <value>jdbc:mysql://hd01:3306/metastore?useSSL=false</value>
-  <description>元数据库连接的URL</description>
+  <name>hive.metastore.uris</name>
+  <value>thrift://hd01:9083</value>
+  <description>
+    指定存储元数据要连接的地址
+    hive --service metastore  
+  </description>
+</property>
+```
+## 使用JDBC方式访问Hive(需要元数据服务)
+hive-site.xml
+```xml
+<property>
+  <name>hive.server2.thrift.bind.host</name>
+  <value>hd01</value>
+  <description>hiveserver2连接主机</description>
 </property>
 <property>
-  <name>javax.jdo.option.ConnectionDriverName</name>
-  <value>com.mysql.jdbc.Driver</value>
-  <description>元数据库连接的Driver</description>
+  <name>hive.server2.thrift.port</name>
+  <value>10000</value>
+  <description>hiveserver2连接端口</description>
 </property>
-<property>
-  <name>javax.jdo.option.ConnectionUserName</name>
-  <value>APP</value>
-  <description>元数据库用户名</description>
-</property>
-<property>
-  <name>javax.jdo.option.ConnectionPassword</name>
-  <value>mine</value>
-  <description>元数据库密码</description>
-</property>
-<property>
-  <name>hive.metastore.schema.verification</name>
-  <value>false</value>
-  <description>元数据存储版本验证</description>
-</property>
-<property>
-  <name>hive.metastore.event.db.notification.api.auth</name>
-  <value>false</value>
-  <description>元数据存储授权</description>
-</property>
-<property>
-  <name>hive.metastore.warehouse.dir</name>
-  <value>/user/hive/warehouse</value>
-  <description>默认HDFS的存储目录</description>
-</property>
+```
+# 数据类型
+## 基本类型(支持类型隐式类型提升,整型,单浮点及<b>符合格式的字符串</b>也可以隐式转化为双浮点)
+Hive类型   |Java类型|长度           |示例
+:-        |:-       |:-            |:-
+TINYINT   |byte     |1byte有符号整数|90
+SMALINT   |short    |2byte有符号整数|90
+INT       |int      |4byte有符号整数|90
+BIGINT    |long     |8byte有符号整数|90
+BOOLEAN   |boolean  |true/false    |TRUE
+FLOAT     |float    |单精度浮点     |3.14
+DOUBLE    |double   |双精度浮点     |3.14
+STRING    |String   |字符           |"hello"
+TIMESTAMP |-        |时间类型       |-
+BINARY    |-        |字节数组       |-
+## 集合类型(可以嵌套)
+类型    |描述                                      |语法
+:-      |:-                                       |:-
+STRUCT  |和C的struct类似,相当于java中的bean对象     |struct(),struct<street:string,city:string>
+MAP     |kv对,可以用['last']这个key获取最后一个元素  |map(),map<string,int>
+ARRAY   |数组,索引从0开始                           |Array(),array<string>
+### 定义集合类型时的方式
+```sql
+-- tom,cary_lily,mary:12_tony:13,waitan_shanghai
+-- mark,susu,lucy:11,chaoyang_beijing
+create table test(
+  name string,
+  friends array<string>,
+  children map<stringm int>,
+  address struct<street:string, city:string>
+)
+row format delimited
+fields terminated by ','
+collection items terminated by '_'  -- 由于map和array用的分隔符需要统一,所以数据进入时需要进行数据清晰
+map keys terminated by ':'
+lines terminated by '\n';
 ```
