@@ -32,9 +32,6 @@ mv ${HIVE_HOME}/lib/log4j-slf4j-impl-2.10.0.jar ${HIVE_HOME}/lib/log4j-slf4j-imp
 
 # 启动客户端, 启动前需要初始化元数据
 hive
-
-# 跟踪客户端日志
-tail -fn0 /tmp/$(id -un)/hive.log
 ```
 ### 初始化元数据
 1. derby(默认)
