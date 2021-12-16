@@ -377,7 +377,7 @@ create [external] table [if not exists] <tableName> -- external: 外部表
 [sorted by (colName [asc|desc], ...)] into numBuckets buckets -- 分桶表参数
 [row format rowFormat] -- 定义行格式, 文件以逗号分隔字段示例示例: row format delimited fields terminated by ',';
 [stored as fileFormat] -- 文件格式
-[location hdfsPath] -- 表存储位置
+[location hdfsPath] -- 指定表存储位置(一般会把此类表设置为外部表)
 [tableproperties (key=value, ...)] -- 表额外属性
 [as selectStatement] -- 查询方式建表(参考别的表形式来建表)
 
@@ -405,6 +405,7 @@ alter table <tableName> replace columns (<col> <type>, ...)
 * 管理表在删除表的时候`会删除元数据同步删除真实数据`
 * 外部表在删除表的时候`只会删除元数据,不会删除真实数据`
 # DML
+## 数据导入
 ```sql
 -- 加载数据
 load data [local] inpath '<dataPath>' [overwrite] into table <tableName> [partition (partcol1=val1, ...)]
@@ -412,4 +413,42 @@ load data [local] inpath '<dataPath>' [overwrite] into table <tableName> [partit
 -- inpath: 路径可以是全路径也可以是相对路径, 相对路径是以进入客户端的路径为基准
 -- overwrite: 是否覆盖数据, 否则添加文件
 -- partition: 上传到指定分区
+
+
+-- 插入数据
+insert into table <tableName> values (<data>),(<data>)...;
+
+-- 根据表数据查询插入
+insert overwrite table <tableName> <sqlSelect>
+-- insert into: 追加方式插入到表或分区
+-- insert overwrite: 覆盖已存在数据
+
+-- 多表查询插入
+from <tableName>
+insert into table <tableName>
+select ...
+insert into table <tableName>
+select ...
+...;
+```
+## 数据导出
+```sql
+-- insert导出
+insert overwrite [local] directory <localPath> -- local: 使用则导出到系统本地,否则导出到HDFS路径
+row format delimited fields terminated by <separator> -- 如果不指定分隔符将会使用系统自带分隔符
+<select ...>;
+
+-- export导出到HDFS(配合import在两个hadoop集群间迁移)
+export table <tableName> to <path>
+```
+```bash
+# hadoop命令导出到本地
+dfs -get <path>
+
+# hive命令导出
+hive -e '<select ...>' > <path>
+```
+## 数据清空
+```sql
+truncate table <tableName>; -- 内部表有效
 ```
