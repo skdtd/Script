@@ -452,3 +452,392 @@ hive -e '<select ...>' > <path>
 ```sql
 truncate table <tableName>; -- 内部表有效
 ```
+
+## 查询
+```sql
+select [all|distinct] <>
+from <tableName>
+[where <condition>]
+[group by <colList>]
+[order by <colList>]
+[cluster by <colList> | [disteribute by <colList>] [sort by <colList>]]
+[limit <num>]
+```
+### 算数运算符
+运算符|描述
+:-    |:-
+A+B  |加
+A-B  |减
+A*B  |乘
+A/B  |除
+A%B  |取模
+A&B  |按位取与
+A|B  |按位取或
+A^B  |按位异或
+~A   |取反
+### 常用函数
+```sql
+count()
+max()
+min()
+sum()
+avg()
+nvl(a,b): 当a为null,则输出b值
+
+```
+> 常用日期函数
+```sql
+unix_timestamp:返回当前或指定时间的时间戳	
+select unix_timestamp();
+select unix_timestamp("2020-10-28",'yyyy-MM-dd');
+
+from_unixtime：将时间戳转为日期格式
+select from_unixtime(1603843200);
+
+current_date：当前日期
+select current_date;
+
+current_timestamp：当前的日期加时间
+select current_timestamp;
+
+to_date：抽取日期部分
+select to_date('2020-10-28 12:12:12');
+
+year：获取年
+select year('2020-10-28 12:12:12');
+
+month：获取月
+select month('2020-10-28 12:12:12');
+
+day：获取日
+select day('2020-10-28 12:12:12');
+
+hour：获取时
+select hour('2020-10-28 12:12:12');
+
+minute：获取分
+select minute('2020-10-28 12:12:12');
+
+second：获取秒
+select second('2020-10-28 12:12:12');
+
+weekofyear：当前时间是一年中的第几周
+select weekofyear('2020-10-28 12:12:12');
+
+dayofmonth：当前时间是一个月中的第几天
+select dayofmonth('2020-10-28 12:12:12');
+
+months_between： 两个日期间的月份
+select months_between('2020-04-01','2020-10-28');
+
+add_months：日期加减月
+select add_months('2020-10-28',-3);
+
+datediff：两个日期相差的天数
+select datediff('2020-11-04','2020-10-28');
+
+date_add：日期加天数
+select date_add('2020-10-28',4);
+
+date_sub：日期减天数
+select date_sub('2020-10-28',-4);
+
+last_day：日期的当月的最后一天
+select last_day('2020-02-30');
+
+date_format(): 格式化日期
+select date_format('2020-10-28 12:12:12','yyyy/MM/dd HH:mm:ss');
+```
+> 常用取整函数
+```sql
+round： 四舍五入
+select round(3.14);
+select round(3.54);
+
+ceil：  向上取整
+select ceil(3.14);
+select ceil(3.54);
+
+floor： 向下取整
+select floor(3.14);
+select floor(3.54);
+```
+> 常用字符串操作函数
+```sql
+upper： 转大写
+select upper('low');
+
+lower： 转小写
+select lower('low');
+
+length： 长度
+select length("atguigu");
+
+trim：  前后去空格
+select trim(" atguigu ");
+
+lpad： 向左补齐，到指定长度
+select lpad('atguigu',9,'g');
+
+rpad：  向右补齐，到指定长度
+select rpad('atguigu',9,'g');
+
+regexp_replace：使用正则表达式匹配目标字符串，匹配成功后替换！
+SELECT regexp_replace('2020/10/25', '/', '-');
+```
+> 集合操作
+```sql
+size： 集合中元素的个数
+select size(friends) from test3;
+
+map_keys： 返回map中的key
+select map_keys(children) from test3;
+
+map_values: 返回map中的value
+select map_values(children) from test3;
+
+array_contains: 判断array中是否包含某个元素
+select array_contains(friends,'bingbing') from test3;
+
+sort_array： 将array中的元素排序
+select sort_array(friends) from test3;
+
+grouping_set:多维分析
+```
+### 比较运算符
+操作符                  |支持的数据类型|描述
+:-                      |:-          |:-
+A = B                   |基本型       |如果`A等于B`则返回TRUE,否则返回FALSE
+A <=> B                 |基本型       |如果`A和B都为Null`则返回TRUE,否则返回FALSE
+A <> B, A != B          |基本型       |A或B为Null则返回Null,如果`A不等于B`则返回TRUE,否则返回FALSE
+A < B                   |基本型       |A或B为Null则返回Null,如果`A小于B`则返回TRUE,否则返回FALSE
+A <= B                  |基本型       |A或B为Null则返回Null,如果`A小于等于B`则返回TRUE,否则返回FALSE
+A > B                   |基本型       |A或B为Null则返回Null,如果`A大于B`则返回TRUE,否则返回FALSE
+A >= B                  |基本型       |A或B为Null则返回Null,如果`A大于等于B`则返回TRUE,否则返回FALSE
+A [NOT] BRTWEEN B AND C |基本型       |如果ABC任一为Null则返回Null,如果`A大于等于B且小于等于C`则返回TRUE,否则返回FALSE
+### like和rlike
+> like
+>> * %:任意个字符
+>> * _:代表一个字符
+>
+> rlike
+>> 使用正则表达式
+### 逻辑运算符
+* and
+* or
+* not
+### select执行顺序
+```sql
+(8)SELECT (9)DISTINCT  (11)<Top Num> <select list>
+(1)FROM [left_table]
+(3)<join_type> JOIN <right_table>
+(2)        ON <join_condition>
+(4)WHERE <where_condition>
+(5)GROUP BY <group_by_list>
+(6)WITH <CUBE | RollUP>
+(7)HAVING <having_condition>
+(10)ORDER BY <order_by_list>
+```
+顺序         | 描述
+:-          |:-
+FROM        |对FROM子句中的前两个表执行笛卡尔积（Cartesian product)(交叉联接），生成虚拟表VT1
+ON          |对VT1应用ON筛选器。只有那些使<join_condition>为真的行才被插入VT2。
+OUTER(JOIN) |如果指定了OUTER JOIN（相对于CROSS JOIN 或(INNER JOIN),保留表（preserved table左外部联接把左表标记为保留表，右外部联接把右表标记为保留表，完全外部联接把两个表都标记为保留表）中未找到匹配的行将作为外部行添加到 VT2,生成VT3.如果FROM子句包含两个以上的表，则对上一个联接生成的结果表和下一个表重复执行步骤1到步骤3，直到处理完所有的表为止。
+WHERE       |对VT3应用WHERE筛选器。只有使<where_condition>为true的行才被插入VT4.
+GROUP BY    |按GROUP BY子句中的列列表对VT4中的行分组，生成VT5.
+CUBE|ROLLUP |把超组(Suppergroups)插入VT5,生成VT6.
+HAVING      |对VT6应用HAVING筛选器。只有使<having_condition>为true的组才会被插入VT7.
+SELECT      |处理SELECT列表，产生VT8.
+DISTINCT    |将重复的行从VT8中移除，产生VT9.
+ORDER BY    |将VT9中的行按ORDER BY 子句中的列列表排序，生成游标（VC10).
+TOP         |从VC10的开始处选择指定数量或比例的行，生成表VT11,并返回调用者。
+### join
+> * 使用表别名可以简化查询
+> * 使用表名前缀可以提高执行效率
+> * on语句遗漏或者无效,会产生笛卡尔积
+
+关键字     |描述
+:-        |:-
+join      |两个表中都存在与连接条件相匹配的数据时才会保留
+left join |左表中符合where子句的数据将被全部保留
+right join|右表中符合where子句的数据将被全部保留
+full join |所有表中的数据都将被保留
+
+### union
+> 连接两张表的数据
+* union: 连接两张表并`去重`
+* union all: 连接两张表但是`不去重`
+当两者结果一致时优先使用union all,执行效率更高
+
+### sort by和order by
+> `asd`升序: 默认
+> `desc`降序
+1. sort by: 可以指定`多个reduce程序`生成多个分区, 数据`随机分配`到各个分区, 仅保持`区内有序`
+2. order by: 只能有`1个reduce程序`且只生成1个分区, `全局有序`
+distribute by: 配合`sort by`使用, 使用该关键字指定的字段进行分区
+cluster by: 当`distribute by`和`sort by`指定同一个字段时,可以用该字段代替, 但是会禁止使用`desc`关键字
+
+### gtoup by
+> 条件分组
+> 
+## 分区表
+> 通过load加载的数据会自动创建分区元数据
+```sql
+-- 创建分区表
+create table <tableName> (...)
+partitioned by (col colType,...) -- 多级分区则添加多个字段
+row format delimited fields terminated by '\t';
+-- 查询对应分区只需要添加where子句即可
+
+-- 加载数据
+load data local inpath <localPath> into <tableName> partition(col='colName',..);
+
+-- 增加分区
+alter table <tableName> add partition(col='colName') ...;
+
+-- 删除分区
+alter table <tableName> drop partition(col='colName'), ...;
+
+-- 显示分区
+show partitions <tableName>;
+
+-- 查看分区结构
+desc formatted <tableName>;
+
+-- 修复分区(检测HDFS目录修复元数据)
+msck repair table <tableName>;
+
+-- 动态分区(需要关闭分区严格模式: set hive.exec.dynamic.partition.mode=nonstrict)
+-- 必须把分区字段放在select最后
+insert into <tableName> partition(partName1, partName2)
+select ...,<partName1>,<partName2>... from <tableName>
+
+-- 分区相关参数设置
+-- 所有节点最大可以创建动态分区总和(默认:1000)
+hive.exec.max.dynamic.partitions
+-- 单个节点最大可以创建动态分区数(默认:100)
+hive.exec.max.dynamic.partitions.pernode
+-- 整个MR任务中最大可以创建的文件数(默认:100000)
+hive.exec.max.created.files
+-- 当有空分区生成时,是否抛出异常(默认:false)
+hive.error.on.empty.partition
+```
+> hive3.0新特性
+>> 在分区严格模式下, 当查询插入时, 最后的字段为分区字段时, 会自动进行动态分区插入
+```sql
+insert into <tableName>
+select ...,<partName1>,<partName2>... from <tableName>
+```
+## 分桶表
+> 根据数据分配到不同的文件中
+>> reduce个数设置为-1, 让job自行决定使用多少个reduce或者将reduce的个数设置为大于等于桶数
+>> 尽量从hdfs中load到分桶表, 避免本地文件找不到的问题
+>> 不要用本地模式
+```sql
+create table <tableName> (col colType...)
+clustered by (col colType) -- 分桶字段必须存在于表字段
+into <bucketNum> buckets
+row format delimited fields terminated by '\t';
+```
+## 抽样查询
+```sql
+-- x: 从第x份样本开始抽样, x的值必须小于等于y的值
+-- y: 将整体数据分为y份样本, 抽大约1/y的数据
+select * from <tableName> tablesample(bucket <x> out of <y> on <colName>)
+```
+
+## hive函数
+> 函数分为三大类(几进几出指多少行数据, 并非个数)
+> * UDF: 一进一出
+> * UDAF: 多进一出
+> * UDTF: 一进多出
+```sql
+-- 显示所有内置函数
+show functions;
+-- 显示内置函数的用法
+desc function <func>;
+-- 显示内置函数的用法(详细)
+desc function extended <func>;
+
+-- 拼接字符串
+concat(s1,s2...sN)          -- 将所有字符拼接在一起
+concat_ws(sep,s1,s2...sN)   -- 以sep为分隔符,将所有字符拼接在一起
+
+-- 接受一列数据生成一个Array类型字段
+collect_set(col)
+```
+## 条件判断
+```sql
+CASE
+    WHEN <expr1> THEN <res1>
+    WHEN <expr2> THEN <res2>
+    ...
+    WHEN <exprN> THEN <resN>
+    ELSE <res>
+END
+```
+## 侧写
+> `lateral view`
+>> 将用函数炸裂出来的多行数据与原表数据进行关联
+```sql
+select
+  <colName>,
+  ...
+  <newColName>
+from <tableName>
+lateral view <function> <tempTableName> as <newColName>
+```
+## 窗口函数
+> over()
+
+关键字                   | 描述
+:-                      |:-
+CURRENT ROW             |当前行
+n PRECEDING             |往前n行数据
+n FOLLOWING             |往后n行数据
+UNBOUNDED               |起点
+UNBOUNDED PRECEDING     |从起点开始
+UNBOUNDED FOLLOWING     |到终点为止
+```sql
+select
+  <colName>,
+  <colName> over(partition by <colName> order by <colName> rows BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+from <tableName>
+-- partition by <colName>: 以该字段为基础进行开窗, 不同窗口间互不影响
+-- order by <colName>: 窗口内数据以该字段进行排序
+-- rows BETWEEN ... AND ...: 从窗口中的第...行开始到第...行结束, 默认从起点开始到当前行结束
+-- 当order by的字段中有相同的数据, 相同的数据会被视为同一行
+```
+### 相关函数(必须与over()结合使用)
+```sql
+-- 往前第n行数据
+LAG(col,n,default_val)
+
+-- 往后第n行数据
+LEAG(col,n,default_val)
+
+-- 取窗口第一行数据
+FIRST_VALUE()
+
+-- 取窗口最后一行数据
+LAST_VALUE()
+
+-- 将有序窗口的行分发到指定数据组中, 各组有从1开始的编号, 该函数则返回此行所属组的编号
+-- n必须为int型, n为多少即分为多少组
+NTILE(n)
+
+-- 排序函数
+-- 排序相同时会重复, 总数不会变(即出现并列后不会跳过并列的行数对下一行计数)
+RANK()
+-- 排序相同时会重复, 总数会减少(即出现并列后跳过并列的行数对下一行计数)
+DENSE_RANK()
+-- 根据顺序计算(即出现并列后按照出现顺序计数)
+-- MR任务中, 由于环形缓冲区的反向溢写, 相同排名的后出现的会排名在上, 可以通过关闭reduce任务解决
+ROW_NUMBER()
+```
+
+
+
+
+
+
