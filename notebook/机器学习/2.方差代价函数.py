@@ -32,10 +32,10 @@ plt.plot(ws, es)
 plt.pause(3)
 
 # 顶点坐标公式: - (b / 2 * a)
-# e = -x0*w + y0
-# e = (x0*w)**2 - 2*x0*y0*w + y0**2
+# e = -x0 * w + y0
+# e = (x0 * w) ** 2 - 2 * x0 * y0 * w + y0 ** 2
 # a = x0 ** 2
-# b = 2*x0*y0
+# b = 2 * x0 * y0
 w_min = np.sum(xs * ys) / np.sum(xs * xs)
 print("bast w: %s" % w_min)
 
