@@ -799,6 +799,9 @@ UNBOUNDED               |起点
 UNBOUNDED PRECEDING     |从起点开始
 UNBOUNDED FOLLOWING     |到终点为止
 ```sql
+-- partition by <colName> order by <colName>
+-- distribte by <colName> sort by <colName>
+-- 以上两种组合等价,但是组合不能打散混用
 select
   <colName>,
   <colName> over(partition by <colName> order by <colName> rows BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
@@ -835,9 +838,187 @@ DENSE_RANK()
 -- MR任务中, 由于环形缓冲区的反向溢写, 相同排名的后出现的会排名在上, 可以通过关闭reduce任务解决
 ROW_NUMBER()
 ```
+### 自定义函数
+```java
+import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 
+/** 自定义UDF函数(计算输入字符长度): 一进一出 */
+public class CustomFuncUDF extends GenericUDF {
+    /** 数据校验 */
+    public ObjectInspector initialize(ObjectInspector[] objectInspectors) throws UDFArgumentException {
+        if (objectInspectors.length != 1)
+            throw new UDFArgumentException("The number of parameters must be 1");
+        return PrimitiveObjectInspectorFactory.javaIntObjectInspector;
+    }
+    /** 处理数据 */
+    public Object evaluate(DeferredObject[] deferredObjects) throws HiveException {
+        if (deferredObjects[0].get() == null)
+            return 0;
+        return deferredObjects[0].get().toString().length();
+    }
 
+    /** 执行计划时显示的字符串 */
+    public String getDisplayString(String[] strings) {
+        return null;
+    }
+}
+```
+```java
+import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDTF;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
+import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 
+/** 自定义UDTF函数(爆裂以逗号分割的字符串): 一进多出 */
+public class CustomFuncUDTF extends GenericUDTF {
+    List<String> output = new ArrayList<>();
 
+    /** 数据校验 */
+    @Override
+    public StructObjectInspector initialize(StructObjectInspector argOIs) throws UDFArgumentException {
+        // 输出数据的默认别名(可以被手动设置的别名替换)
+        List<String> fieldNames = new ArrayList<>();
+        // 输出数据的数据类型
+        List<ObjectInspector> fieldOIs = new ArrayList<>();
+        fieldNames.add("word");
+        fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
+        // 最终返回值
+        return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, fieldOIs);
+    }
 
+    /** 处理输入数据 */
+    public void process(Object[] args) throws HiveException {
+        if (args[0] == null) {
+            forward(output);
+        } else {
+            for (String word : args[0].toString().split(",")) {
+                output.clear();     // 清空集合
+                output.add(word);   // 数据放入集合
+                forward(output);    // 写出集合
+            }
+        }
+    }
+
+    /** 收尾方法 */
+    public void close() throws HiveException {
+
+    }
+}
+```
+```sql
+-- 放在${HIVE_HOME}/lib里的jar包会在启动时加载
+
+-- 在已经启动的客户端动态加载jar包
+add jar <jarPath>;
+
+-- 创建函数与java class关联
+-- temporary: 创建临时函数, 客户端关闭后自动销毁
+-- className: 全类名
+create [temporary] function <funcName> as "<className>";
+```
+# 压缩和存储方式
+> 需要在Hadoop中启用压缩
+core-site.xml
+```xml
+<property>
+  <name>io.compression.codecs</name>
+  <value></value>
+  <description>
+    可选值:
+    org.apache.hadoop.io.compress.DefaultCodec
+    org.apache.hadoop.io.compress.GzipCodec
+    org.apache.hadoop.io.compress.Bzip2Codec
+    org.apache.hadoop.io.compress.Lz4Codec
+  </description>
+</property>
+```
+mapred-site.xml
+```xml
+<property>
+  <name>mapreduce.map.output.compress</name>
+  <value>false</value>
+  <description>启用mapper输出压缩</description>
+</property>
+
+<property>
+  <name>mapreduce.map.output.compress.codec</name>
+  <value>org.apache.hadoop.io.compress.DefaultCodec</value>
+  <description>mapper输出压缩编码</description>
+</property>
+<property>
+  <name>mapreduce.output.fileoutputformat.compress</name>
+  <value>false</value>
+  <description>启用reducer输出压缩</description>
+</property>
+
+<property>
+  <name>mapreduce.output.fileoutputformat.compress.type</name>
+  <value>RECORD</value>
+  <description>
+    压缩输出类型:
+    RECORD: 按行压缩
+    BLOCK: 按块压缩
+    NONE: 不压缩
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.output.fileoutputformat.compress.codec</name>
+  <value>org.apache.hadoop.io.compress.DefaultCodec</value>
+  <description>reducer输出压缩编码</description>
+</property>
+```
+hive客户端中开启压缩
+```sql
+-- 开启hive中间传输数据压缩功能
+set hive.exec.compress.intermediate=true;
+-- 开启mapreduce中map输出压缩功能
+set mapreduce.map.output.compress=true;
+-- mapreduce中map输出压缩编码
+set mapreduce.map.output.compress.codec=org.apache.hadoop.io.compress.SnappyCodec
+
+-- 开启hive最终输出压缩功能
+set hive.exec.compress.output=true;
+-- 开启mapreduce最终输出压缩
+set mapreduce.output.fileoutputformat.compress=true;
+-- 设置mapreduce最终输出压缩编码
+set mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.SnappyCodec;
+-- 设置mapreduce最终输出压缩为块压缩
+set mapreduce.output.fileoutputformat.compress.type=BLOCK;
+```
+## ORC存储方式
+* 这些参数需要卸载HQL的TBLPROPERTIES字段中
+key                     |default  |notes
+:-                      |:-       |:-
+orc.compress            |ZLIB     |
+orc.compress.size       |262144   |
+orc.stripe.size         |268435456|
+orc.row.index.stride    |10000    |
+orc.create.index        |true     |
+orc.bloom.filter.columns|""       |
+orc.bloom.filter.fpp    |0.05     |
+# 查看执行计划
+> * HQL前加`explain`关键字
+> * 可以用`explain extended`关键字获取更详细信息
+
+# Fetch抓取
+```xml
+<property>
+  <name>hive.fetch.task.conversion</name>
+  <value>more</value>
+  <description>
+    0. none : disable hive.fetch.task.conversion
+    1. minimal : SELECT STAR, FILTER on partition columns, LIMIT only
+    2. more    : SELECT, FILTER, LIMIT only (support TABLESAMPLE and virtual columns)
+  </description>
+</property>
+```
