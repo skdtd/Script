@@ -1022,3 +1022,159 @@ orc.bloom.filter.fpp    |0.05     |
   </description>
 </property>
 ```
+
+# 本地模式
+> Hive可以通过本地模式在单台机器上处理所有的任务, 对于小数据集, 执行时间可以明显被缩短
+```sql
+-- 开启本地MR(默认: false)
+set hive.exec.mode.local.auto=fasle;
+-- 设置local MR的最大数据量, 低于这个值时采用本地模式(默认: 128M)
+set hive.exec.mode.local.auto.inputbytes.max=134217728;
+-- 设置local MR的最大输入文件个数, 低于这个值时采用本地模式(默认: 4)
+set hive.exec.mode.local.auto.files.max=4;
+```
+```xml
+<property>
+  <name>hive.exec.mode.local.auto</name>
+  <value>false</value>
+  <description>开启本地MR(默认: false)</description>
+</property>
+<property>
+  <name>hive.exec.mode.local.auto.inputbytes.max</name>
+  <value>134217728</value>
+  <description>设置local MR的最大数据量, 低于这个值时采用本地模式(默认: 128M)</description>
+</property>
+<property>
+  <name>hive.exec.mode.local.auto.input.files.max</name>    <value>4</value>
+  <description>设置local MR的最大输入文件个数, 低于这个值时采用本地模式(默认: 4)</description>
+</property>
+```
+# 表的优化
+## 大小表Join(MapJOIN)
+> 3.x的hive已经对小表join大表和大表join小表进行了优化,小表位置已经没有区别
+```xml
+<property>
+  <name>hive.auto.convert.join</name>
+  <value>true</value>
+  <description>始终保持小表Join大表</description>
+</property>
+<property>
+  <name>hive.mapjoin.smalltable.filesize</name>
+  <value>25000000</value>
+  <description>设置大小表阈值(默认: 25M)</description>
+</property>
+```
+### 空key过滤
+> 使用场景
+>> * 非inner join
+>> * 不需要字段为Null的(先过滤再join,减少join时处理的数据集)
+### 空key转化
+> 注意添加的随机值不能满足join条件 
+
+### SMBJoin(Sort Merge Bucket Join)
+```sql
+-- 是否开启桶Join
+set hive.optimize.bucketmapjoin=true
+-- 是否开启SMBJoin
+set hive.optimize.bucketmapjoin.sortedmerge=true
+-- 默认输入格式
+set hive.input.format=org.apache.hadoop.hive.ql.io.BucketizedHiveInputFormat
+```
+```xml
+<property>
+  <name>hive.optimize.bucketmapjoin</name>
+  <value>true</value>
+  <description>是否开启桶Join</description>
+</property>
+<property>
+  <name>hive.optimize.bucketmapjoin.sortedmerge</name>
+  <value>true</value>
+  <description>是否开启SMBJoin</description>
+</property>
+<property>
+  <name>hive.input.format</name>
+  <value>org.apache.hadoop.hive.ql.io.BucketizedHiveInputFormat</value>
+  <description>默认输入格式</description>
+</property>
+```
+### 数据倾斜(group by)
+```sql
+-- 是否在Map端进行聚合(默认true)
+set hive.map.aggr=true
+-- 在Map端进行聚合操作的条目数目
+set hive.groupby.mapaggr.checkinterval=100000
+-- 出现数据倾斜时进行负载均衡(默认false)(如果没有数据倾斜使用的话反而增加会执行时间)
+-- 当设置为true时,查询计划会生成2个MRjob
+-- 第一个job会将Map输出随机分配到reduce中并输出结果,避免相同key分配到同一个reduce中
+-- 第二个job会根据预处理的数据按照指定的group by规则把数据分不到reduce中
+set hive.groupby.skewindata=true
+```
+### Count(distinct)去重统计
+> 数据量小的时候无所谓,数据量大的情况下,由于Count(distinct)操作需要用一个Reduce任务来完成,这一个Reduce需要处理的数据量太大,就会导致整个Job很难完成,`一般Count(distinct)使用先Group by在Count的方式替换`,注意数据倾斜的问题
+### 行列过滤
+> * 列处理: 在select中,只拿需要的列,如果又分区尽量使用分区过滤,避免使用'*'
+> * 行处理: 在分区剪裁中,当使用外关联时,如果将副表的过滤条件写在where后面,那么就会先全表关联,再过滤(谓词下推: hive的优化机制会根据hql优化关键字执行顺序),但是在Hql过长的时候可能会导致谓词下推失效,所以尽可能主动优化
+### 复杂文件增加Map数量
+> 当input文件很大,`字段少而记录多,或者单行任务逻辑十分复杂`,map执行慢的时候可以考虑增加Map数量,使每个map处理的数据量减少,从而提高任务的执行效率
+```sql
+set mapreduce.input.fileinputformat.split.maxsize=100;
+```
+### 小文件合并
+> 在map执行前合并小文件,减少map数量,以及在Map-Reduce任务结束时合并小文件
+```sql
+-- 设置输入小文件合并
+set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
+-- 在Map-only任务结束时合并小文件(默认: true)
+set hive.merge.mapfiles=true;
+-- 在Map-reduce任务结束时合并小文件(默认: false)
+set hive.merge.mapredfiles=true;
+-- 合并文件的大小(默认: 256M)
+set hive.merge.size.per.task=268435456;
+-- 当输出文件的平均大小小于该值时,启动一个独立的mMap-reduce任务进行merge
+set hive.merge.smallfiles.avgsize=16777216;
+```
+### 调整reduce数量
+```sql
+-- 每个reduce处理的默认数据量(默认: 256M)
+set hive.exec.reducers.bytes.per.reducer=256000000
+-- 每个任务最大reduce数(默认: 1009)
+set hive.exec.reducers.max=1009
+-- 系统自动配置reduce数公式: min(<每个任务最大reduce数>, <总数据量>/<每个reduce处理的默认数据量>)
+
+-- 直接设置reduce数
+set mapreduce.job.reduces=15;
+```
+### 并行执行
+```sql
+-- 开启任务并行
+set hive.exec.parallel=true;
+-- 同一个sql最大并行度(默认: 8)
+set hive.exec.parallel.thread.number=8;
+```
+### 严格模式
+```sql
+-- 分区表不使用分区过滤(默认: false)
+-- 设置为true时,除非where语句包含分区字段,否则不允许执行
+set hive.strict.checks.no.partition.filter=false;
+
+-- 使用order by没有limit过滤(默认false)
+-- 设置为true时,对使用了order by的语句必须使用limit语句
+-- 会在每个map任务只输出指定limit的数据到reduce,在最后reduce中再取指定limit的数据
+set hive.strict.checks.orderby.no.limit=false
+
+-- 笛卡尔积(默认: false)
+-- 设置为true时,不允许笛卡尔积查询
+set hive.strict.checks.cartesian.product=false
+```
+### JVM重用
+> 使用hadoop配置
+```sql
+-- 开启uber模式(用于处理小文件)(默认: false)
+set mapreduce.job.ubertask.enable=true;
+-- jvm的最大重用次数(0-9)
+set mapreduce.job.ubertask.maxmaps=9;
+-- 最大Reduce数量(0-1)
+set mapreduce.job.ubertask.maxreduces=1;
+-- 最大数据输入量,不填则为dfs.block.size的值,(0-dfs.block.size)
+set mapreduce.job.ubertask.maxbytes;
+```
