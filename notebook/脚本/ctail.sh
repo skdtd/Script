@@ -22,4 +22,16 @@
 # 39:蓝
 # 40:蓝
 
-cat file | perl -pe 's/(?i)(DEBUG)/\e[8;31m$1\e[0m/g'
+SET=(
+    'ERROR,1,31'
+    'WARN,1,35'
+    'INFO,1,33'
+    'DEBUG,1,36'
+)
+
+for i in $(seq ${#SET[@]})
+do
+    KEYS=$KEYS$(echo ${SET[$i]} | sed -r 's/^(.*),.*,.*/(\1)|/')
+    COLORS=$COLORS$(echo ${SET[$i]} | sed -r "s/^.*,(.*),(.*)/\\\e[\1;\2m\$$i\\\e[0m/")
+done
+tail -fn10 $1 | perl -pe "s/(?i)$KEYS/$COLORS/g"
