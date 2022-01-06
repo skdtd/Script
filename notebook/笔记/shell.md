@@ -307,3 +307,27 @@ next:       跳过当条数据(即处理下一行数据,严格来说不属于循
 
 # awk自定义函数(可以将自定义函数写到文件中用-f读取)
 awk 'function custom(){print "I am custom function"}BEGIN{custom()}'
+
+# iptables
+```bash
+# 丢弃所有3306端口的入站请求
+/usr/sbin/iptables -I INPUT -p tcp --dport 3306 -j DROP
+
+# 丢弃包含更新表字符的入站tcp请求
+/usr/sbin/iptables -I INPUT -p tcp --dport 3306 -m string --string "update table" --algo kmp -j DROP
+
+# 取消丢弃包含更新表字符的入站tcp请求
+/usr/sbin/iptables -D INPUT -p tcp --dport 3306 -m string --string "update table" --algo kmp -j DROP
+
+# 拒绝包含更新表字符的入站tcp请求
+/usr/sbin/iptables -I INPUT -p tcp --dport 3306 -m string --string "update table" --algo kmp -j REJECT
+
+# 取消拒绝包含更新表字符的入站tcp请求
+/usr/sbin/iptables -D INPUT -p tcp --dport 3306 -m string --string "update table" --algo kmp -j REJECT
+
+# 清除所有临时规则
+/usr/sbin/iptables -F
+
+# 查看所有规则
+/usr/sbin/iptables -L
+```
