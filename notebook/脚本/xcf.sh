@@ -17,9 +17,9 @@ PORT='22'                               # ssh默认端口
 IDENTITY="~/.ssh/id_rsa"                # ssh默认密钥
 TIMEOUT='60'                            # ssh默认超时时间
 IRS='{&n}'                              # 换行符替代符号
-TAGSTYLE='1136'                         # 标签字样式
-ERRSTYLE='1119'                         # 错误字样式
-TIPSTYLE='1183'                         # 提示字样式
+TAG_STYLE='1136'                         # 标签字样式
+ERR_STYLE='1119'                         # 错误字样式
+TIP_STYLE='1183'                         # 提示字样式
 
 # 参数收集
 TEMP=$(getopt -o h:u:p:i:t: --long host:,user:,port:,identity:,timeout: -n '无效参数' -- "$@")
@@ -106,7 +106,7 @@ function xmd(){
             -o GSSAPIAuthentication=no \
             -p"${PORT}" -i"${IDENTITY}" \
             "${USER}@${HOST}" \
-            "echo -e \"$(cecho ${TAGSTYLE} Node: ${HOST})\";cd ${CWD} && $@;exit" | \
+            "echo -e \"$(cecho ${TAG_STYLE} Node: ${HOST})\";cd ${CWD} && $@;exit" | \
             awk -v ORS="${IRS}" '{print $0}' >&1023;echo >&1023 & } 2>/dev/null
     done
     wait
@@ -128,10 +128,10 @@ function xyc(){
     if [[ $? != 0 ]];then
         which scp >& /dev/null
         if [[ $? != 0 ]];then
-            echo -e $(cecho ${ERRSTYLE} "找不到rsync和scp模块,传输中止")
+            echo -e $(cecho ${ERR_STYLE} "找不到rsync和scp模块,传输中止")
             exit 1
         fi
-        echo -e $(cecho ${TIPSTYLE} "提示: 当前使用正在scp模块传输")
+        echo -e $(cecho ${TIP_STYLE} "提示: 当前使用正在scp模块传输")
         _scp $@
     else
         _rsync $@
@@ -141,7 +141,7 @@ function xyc(){
 function _rsync(){
     for HOST in ${XCFHOSTLIST[@]}
     do
-        echo -e $(cecho ${TAGSTYLE} "Node: ${HOST}")
+        echo -e $(cecho ${TAG_STYLE} "Node: ${HOST}")
         local FILE=$(readlink -m $1)
         local DIR=$(dirname ${FILE})
         rsync -arzcP \
@@ -154,7 +154,7 @@ function _rsync(){
 function _scp(){
     for HOST in ${XCFHOSTLIST[@]}
     do
-        echo -e $(cecho ${TAGSTYLE} "Node: ${HOST}")
+        echo -e $(cecho ${TAG_STYLE} "Node: ${HOST}")
         local FILE=$(readlink -m $1)
         local DIR=$(dirname ${FILE})
         scp -o StrictHostKeyChecking=no \
@@ -166,7 +166,7 @@ function _scp(){
 
 [[ $# == 0 ]] && usage && exit 0
 [[ -z "${XCFHOSTLIST}" ]] && \
-    echo -e $(cecho ${ERRSTYLE} "找不到执行节点,请以数组的形式在'-h'参数中指定,或者设置为变量'XCFHOSTLIST'") && \
+    echo -e $(cecho ${ERR_STYLE} "找不到执行节点,请以数组的形式在'-h'参数中指定,或者设置为变量'XCFHOSTLIST'") && \
     exit 1
 if [[ -f $1 || -d $1 ]];then
     xyc $@
