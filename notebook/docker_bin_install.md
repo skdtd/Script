@@ -54,9 +54,8 @@ systemctl status docker             #查看Docker状态
 
 
 
-
-
-
+#
+#
 
 
 # k8s安装
