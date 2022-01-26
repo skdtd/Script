@@ -1,0 +1,54 @@
+@TARGET=localhost:16100
+@USER_MAILSEND=/user/mailSend
+@USER_MAILRECV=/user/mailRecv
+@PROVIDER_MAILINGLIST=/provider/mailingList
+
+@PARMA=primaryMailAddress=aa@qq.com&providerId=123&userId=223
+@X_API_KEY=123
+
+### メーリングリスト参照
+GET {{PROVIDER_MAILINGLIST}}/setting?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
+
+
+### 送信時ウィルスチェック設定参照
+GET {{USER_MAILSEND}}/rule/virusCheck?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
+
+
+### 着信通知設定参照
+GET {{USER_MAILRECV}}/notification?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
+
+
+### メール転送設定参照
+GET {{USER_MAILRECV}}/autoForward?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
+
+
+### 自動応答設定参照
+GET {{USER_MAILRECV}}/autoReply?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
+
+
+### 受信時ウィルスチェック設定参照
+GET {{USER_MAILRECV}}/rule/virusCheck?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
+
+
+### 迷惑メールブロック設定参照
+GET {{USER_MAILRECV}}/rule/spamBlock?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
+
+
+### 拒否設定(ブラックリスト)参照
+GET {{USER_MAILRECV}}/filter/blacklist?{{PARMA}}
+Host: {{TARGET}}
+X-API-KEY: {{X_API_KEY}}
