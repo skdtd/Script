@@ -331,3 +331,18 @@ awk 'function custom(){print "I am custom function"}BEGIN{custom()}'
 # 查看所有规则
 /usr/sbin/iptables -L
 ```
+
+
+# gpg文件加密
+```bash
+# 生成随机熵
+yum install rng-tools
+rngd -r /dev/urandom
+
+# 加密
+echo "test" > {FILE_ORG}
+echo {KEY} | gpg --yes --quiet --batch -c --cipher-algo AES256 --passphrase-fd 0 -o {FILE} {FILE_ORG}
+
+# 解密
+echo {KEY} | gpg --yes --quiet --batch -d --passphrase-fd 0 {FILE}
+```
