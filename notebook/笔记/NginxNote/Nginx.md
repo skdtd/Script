@@ -165,6 +165,18 @@ http {
         location = /50x.html {
             root   html;
         }
+
+        # 动静分离, 将静态文件请求指向本机目录, 多少个目录要配置多少个location
+        # 或者使用正则匹配 ~: 使用正则, *: 不区分大小写
+        location ~*/(css|js|img) {
+            root   /opt/site/www;
+            index  index.html index.htm;
+        }
+        
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
     }
     
     server {
