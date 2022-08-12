@@ -26,7 +26,11 @@ def recast():
 	pyautogui.click(240,  831)
 	pyautogui.moveTo(1433,  599)
 
+def info():
+	print("脚本正在运行")
 
+print("start")
+keyboard.add_hotkey('F1', info)
 keyboard.add_hotkey('F5', soldItem)
 keyboard.add_hotkey('F6', recast)
 
