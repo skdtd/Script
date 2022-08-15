@@ -1,0 +1,10 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultInstall]
+AddReg=TrackFile
+
+[TrackFile]
+hkcr,"*\\shell\\TrackFile",,,"Track this file"
+hkcr,"*\\shell\\TrackFile\\command",,,"wt -w0 --title TrackFile powershell.exe Get-Content -Wait %1"
+hkcr,"*\\shell\\TrackFile","Icon",0x20000,"powershell.exe, 0"

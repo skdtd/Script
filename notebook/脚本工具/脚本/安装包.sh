@@ -1,0 +1,54 @@
+# 所有需要yum安装下载的包
+
+
+## 内核升级
+rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+yum install https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm
+yum --enablerepo=elrepo-kernel install -y kernel-lt
+
+## epel-release库(jq的所在库)
+yum install epel-release
+
+## ipvs
+yum install ipvsadm ipset sysstat conntrack libseccomp
+
+## 安装常用工具(master)
+yum install vim wget git jq psmisc net-tools yum-utils device-mapper-persistent-data lvm2 sshpass
+
+
+#所有非yum下载的包
+
+# 内核升级包
+KERNEL_VERSION=$(sed -r 's/.*release ([0-9]).*/\1/g' /etc/redhat-release)
+PLATFORM=$(uname -i)
+URL="https://elrepo.org/linux/kernel/el${KERNEL_VERSION}/${PLATFORM}/RPMS/"
+KERNEL_PKG=$(curl -sSL ${URL} | grep -Po "kernel-lt-\d.*?el7\.elrepo\.$(uname -i)\.rpm" | uniq | sort | tail -1)
+curl -LOC - ${URL}${KERNEL_PKG}
+## docker
+DOKCER_URL='https://download.docker.com/linux/static/stable/x86_64/'
+DOCKER_VERSION=$(curl -sSL ${DOKCER_URL} | grep -Po "docker-(\d+\.){2}(\d+)" | uniq | grep -Ev "ce|rootless" | sed -n '$p') && echo ${DOCKER_VERSION}
+curl -OC - ${DOKCER_URL}${DOCKER_VERSION}.tgz
+
+## cfssl
+CFSSL_URL='https://github.com/cloudflare/cfssl/releases/'
+CFSSL_VERSION=$(curl -sS ${CFSSL_URL}latest | sed -r 's#.*tag/v(.*)">redirected.*#\1#g')
+curl --remote-name-all -LC - ${CFSSL_URL}download/v${CFSSL_VERSION}/{cfssl-certinfo,cfssl,cfssljson}_${CFSSL_VERSION}_linux_amd64
+for name in `ls cfssl*`; do chmod +x $name; mv $name ${name%_${CFSSL_VERSION}_linux_amd64}; done
+
+## etcd
+ETCD_URL='https://github.com/etcd-io/etcd/releases/'
+ETCD_VERSION=$(curl -sS ${ETCD_URL}latest | sed -r 's#.*tag/(.*)">redirected.*#\1#g')
+curl -LOC - ${ETCD_URL}download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
+tar -zxvf etcd-${ETCD_VERSION}-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin etcd-${ETCD_VERSION}-linux-amd64/etcd{,ctl}
+
+## k8s组件
+K8S_URL='https://dl.k8s.io/'
+K8S_VERSION=$(curl -sSL https://dl.k8s.io/release/stable.txt)
+curl -LOC - ${K8S_URL}${K8S_VERSION}/kubernetes-server-linux-amd64.tar.gz
+tar -xvf kubernetes-server-linux-amd64.tar.gz --strip-components=3 -C /usr/local/bin kubernetes/server/bin/kube{let,ctl,-apiserver,-controller-manager,-scheduler,-proxy}
+
+## JDK(清华源)
+JDK_VERSION=8
+JDK_URL="https://mirrors.tuna.tsinghua.edu.cn/AdoptOpenJDK/${JDK_VERSION}/jdk/x64/linux/"
+JDK_PKG=$(curl -skS ${JDK_URL} | grep -Po 'OpenJDK.*?-jdk.*?tar.gz' | sort | uniq | head -1)
+curl -kLOC - ${JDK_URL}${JDK_PKG}

@@ -1,0 +1,136 @@
+{
+  "main": {
+    "id": "e8374d78bdbb40b5",
+    "type": "split",
+    "children": [
+      {
+        "id": "d46319f9e2184ac9",
+        "type": "leaf",
+        "state": {
+          "type": "empty",
+          "state": {}
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8110e4456bb196da",
+    "type": "split",
+    "children": [
+      {
+        "id": "6468ac46433d73ab",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "19c041d53a6a03e0",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "a903f1d837a2ed10",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "32eab390603a703d",
+            "type": "leaf",
+            "state": {
+              "type": "starred",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "81f4da2254154bb0",
+    "type": "split",
+    "children": [
+      {
+        "id": "7beabf0486c0ba89",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4569f8656cd535d4",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "dc673fb1208968bb",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "a244a8b06ac4847c",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "30372aa54eb64497",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "d46319f9e2184ac9",
+  "lastOpenFiles": [
+    "readme.md",
+    "书签.md",
+    "笔记/笔记_Hive.md",
+    "素材/Hive架构图.png",
+    "pic/Hive架构图.png.md",
+    "笔记/笔记_pyautogui.md",
+    "笔记/笔记_python.md",
+    "conda-cheatsheet.pdf",
+    "笔记/未命名.md",
+    "笔记/bat.md"
+  ]
+}
