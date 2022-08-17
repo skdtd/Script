@@ -1,0 +1,9 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultInstall]
+AddReg=Rustup
+
+[Rustup]
+hklm,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","RUSTUP_DIST_SERVER",,"https://mirrors.tuna.tsinghua.edu.cn/rustup"
+hklm,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","RUSTUP_UPDATE_ROOT",,"https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup"

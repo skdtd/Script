@@ -7,8 +7,12 @@
         "id": "d46319f9e2184ac9",
         "type": "leaf",
         "state": {
-          "type": "empty",
-          "state": {}
+          "type": "markdown",
+          "state": {
+            "file": "笔记/笔记_Rust.md",
+            "mode": "source",
+            "source": false
+          }
         }
       }
     ],
@@ -73,6 +77,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "笔记/笔记_Rust.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -89,6 +94,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "笔记/笔记_Rust.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -110,7 +116,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "笔记/笔记_Rust.md"
+              }
             }
           }
         ]
@@ -122,15 +130,15 @@
   },
   "active": "d46319f9e2184ac9",
   "lastOpenFiles": [
-    "readme.md",
-    "书签.md",
-    "笔记/笔记_Hive.md",
-    "素材/Hive架构图.png",
-    "pic/Hive架构图.png.md",
-    "笔记/笔记_pyautogui.md",
     "笔记/笔记_python.md",
-    "conda-cheatsheet.pdf",
-    "笔记/未命名.md",
-    "笔记/bat.md"
+    "笔记/笔记_pyautogui.md",
+    "笔记/笔记_ansible.md",
+    "笔记/笔记_bat.md",
+    "笔记/笔记_expect.md",
+    "笔记/笔记_flume.md",
+    "笔记/笔记_hadoop.md",
+    "笔记/笔记_Hive.md",
+    "笔记/笔记_jupyter.md",
+    "笔记/笔记_linux环境配置.md"
   ]
 }
