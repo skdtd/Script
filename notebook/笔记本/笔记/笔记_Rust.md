@@ -22,6 +22,16 @@ cargo run # 构建并运行工程
 cargo check # 检查工程
 
 cargo update # 更新toml中最新的包版本到lock中
+
+cargo test # 运行测试样例 用#[test]标注的方法
+# 默认行为:
+# 并行运行, 运行所有测试, 捕获通过测试的所有输出
+cargo test -- --test-threads=1 # 串联运行, 避免共享数据修改时导致其他测试失败
+cargo test -- --test-output    # 显示所有测试的输出信息
+cargo test -- --ignored        # 单独运行所有被忽略的测试
+cargo test abc                 # 运行所有以abc开头的测试
+cargo test --test <文件名>      # 运行指定文件的集成测试
+# 集成测试不能将main.rs的函数导入到作用域, 只能导入lib.rs的函数
 ```
 
 # [Lib库](https://crates.io/)
