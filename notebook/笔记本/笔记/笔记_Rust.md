@@ -72,3 +72,234 @@ members = [         # 成员列表
 ```
 ## 自定义cargo
 * 当$PATH中的某个二进制文件是`cargo-xxx`的时候,可以在命令行使用`cargo xxx`来运行,这样的命令可以用`cargo --list`查看
+
+# 模式匹配
+## 字面值匹配
+```rust
+fn main() {
+    let x = 1;
+    match x {
+        1 => println!("a"), // a
+        2 => println!("b"),
+        3 => println!("c"),
+        _ => println!(" "),
+    }
+}
+```
+## 命名变量匹配
+```rust
+fn main() {
+    let x = Some(5);
+    let y = 10;
+    match x {
+        Some(50) => println!("got: 50"),
+        Some(y) => println!("got: {:?}", y), // got: 5
+        _ => println!("default case: {:?}", x),
+    }
+    println!("at the end: x = {:?}, y = {:?}", x, y); // at the end: x = Some(5), y = 10
+}
+```
+## 多重匹配模式
+```rust
+fn main() {
+    let x = 1;
+    match x {
+        1 | 2 => println!("a or b"), // a or b
+        3 => println!("c"),
+        _ => println!(" "),
+    }
+}
+```
+## 范围匹配
+```rust
+fn main() {
+    let x = 1;
+    match x {
+        1 ..= 5 => println!("a .. f"), // a .. f
+        _ => println!(" "),
+    }
+    let x = 'a';
+    match x {
+        'a' ..= 'f' => println!("a .. f"),  // a .. f
+        _ => println!(" "),
+    }
+}
+```
+## 解构以分解值
+```rust
+struct Point {
+    x: u32,
+    y: u32,
+}
+fn main() {
+    let p = Point{x: 0, y: 7};
+    let Point{x: a, y: b} = p;
+    println!("a = {}, b = {}", a, b); // a = 0, b = 7
+
+    let p = Point{x: 3, y: 5};
+    let Point{x, y} = p;
+    println!("x = {}, y = {}", x, y); // x = 3, y = 5
+
+    let p = Point{x: 3, y: 0};
+    match p {
+        Point{x, y: 0} => println!("y is zero"), // y is zero
+        Point{x: 0, y} => println!("x is zero"),
+        Point{x, y} => println!("no zero"),
+    }
+}
+```
+## 枚举解构
+```rust
+enum Message {
+    Quit,
+    Move{x: i32, y: i32},
+    Write{text: String},
+    ChangeColor(i32, i32, i32),
+}
+fn main() {
+    let msg = Message::ChangeColor(0, 100, 200);
+
+    match msg {
+        Message::Quit => println!("quit"),
+        Message::Move{x, y} => println!("move: x = {}, y = {}", x, y),
+        Message::Write{text} => println!("write: {}", text),
+        Message::ChangeColor(r, g, b) => println!("changeColor: r = {}, g = {}, b = {}", r, g, b), // changeColor: r = 0, g = 100, b = 200
+    }
+}
+```
+## 嵌套解构
+```rust
+enum Color{
+    Rgb(i32, i32, i32),
+    Hsv(i32, i32, i32),
+}
+enum Message {
+    Quit,
+    Move{x: i32, y: i32},
+    Write(String),
+    ChangeColor(Color),
+}
+fn main() {
+    let msg = Message::ChangeColor(Color::Rgb(0, 100, 200));
+    match msg {
+        Message::ChangeColor(Color::Rgb(r, g, b)) => println!("changeColor: r = {}, g = {}, b = {}", r, g, b), // changeColor: r = 0, g = 100, b = 200
+        Message::ChangeColor(Color::Hsv(h, v, s)) => println!("changeColor: h = {}, v = {}, s = {}", h, v, s),
+        _ => (),
+    }
+}
+```
+## 结构struct和tuple
+```rust
+struct Point{
+    x: i32,
+    y: i32,
+}
+fn main() {
+    let ((a, b), Point{x, y}) = ((1, 2), Point {x: 3, y: 4});
+    println!("a = {}, b = {}, x = {}, y = {}", a, b, x, y); // a = 1, b = 2, x = 3, y = 4
+}
+```
+# 忽略值
+## 忽略整个值
+```rust
+fn foo(x: i32, y: i32){
+    println!("y = {}", y);
+}
+fn main() {
+    foo(3, 4); // y = 4
+}
+```
+## 忽略部分值
+```rust
+fn main() {
+    let mut v1 = Some(1);
+    let v2 = Some(2);
+    match (v1, v2){
+        (Some(_), Some(_)) => println!("ok"), // ok
+        _ => v1 = v2,
+    }
+    println!("v1 = {:?}", v1); // v1 = Some(1)
+}
+let tp = (1,2,3,4,5);
+match tp {
+    (a, _, c, _, e) => println!("ok: a = {}, c = {}, e = {}",a , c, e), // ok: a = 1, c = 3, e = 5
+}
+```
+## 忽略未使用的变量
+```rust
+fn main() {
+    let _x = 5;
+    let y = 10;
+}
+```
+## 不获取变量所有权
+```rust
+fn main() {
+    let s = Some(String::from("ok"));
+    // 这里如果使用_s的话会使s的所有权转移
+    if let Some(_) = s {
+        println!("found str"); // found str
+    }
+    println!("s = {:?}", s); // s = Some("ok")
+}
+```
+## 忽略剩余部分
+```rust
+struct Color{
+    r: i32,
+    g: i32,
+    b: i32,
+}
+fn main() {
+    let c = Color{r: 0, g: 100, b: 200};
+    match c {
+        Color{ r: 0, ..} => println!("ok"), // ok
+        _ => println!("ng"),
+    }
+    let tp = (1,2,3,4,5);
+    match tp {
+        (a, .., 5) => println!("ok"), // ok
+        _ => println!("ng"),
+    }
+}
+```
+## match守卫模式
+```rust
+fn main() {
+    let num = Some(4);
+    match num {
+        Some(x) if x < 5 => println!("less than 5: {}", x), // less than 5: 4
+        Some(x) => println!("{}", x),
+        None => (),
+    }
+
+    let num = Some(10);
+    let y = 10;
+    match num {
+        Some(x) if x < 5 => println!("less than 5: {}", x), 
+        Some(n) if n == y => println!("{}", n), // 10
+        Some(_) => (),
+        None => (),
+    }
+
+    let x = 4;
+    let bool = false;
+    match x {
+        4 | 5 | 6 if bool => println!("ok"),
+        _ => println!("ng"), // ng
+    }
+}
+```
+## @绑定
+```rust
+enum Message {
+    Hello{id: i32},
+}
+fn main() {
+    let msg = Message::Hello{ id: 5 };
+    match msg {
+        Message::Hello{ id: id_binding @ 1 ..= 7 } => println!("id_binding = {}", id_binding), // id_binding = 5
+        Message::Hello{ id } => println!("id = {}", id),
+    }
+}
+```
