@@ -4,15 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "d46319f9e2184ac9",
+        "id": "b21618fbbf4064b5",
         "type": "leaf",
         "state": {
-          "type": "markdown",
-          "state": {
-            "file": "笔记/笔记_Rust.md",
-            "mode": "source",
-            "source": false
-          }
+          "type": "empty",
+          "state": {}
         }
       }
     ],
@@ -77,7 +73,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "笔记/笔记_Rust.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -94,7 +89,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "笔记/笔记_Rust.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -116,9 +110,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "笔记/笔记_Rust.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -128,8 +120,9 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "d46319f9e2184ac9",
+  "active": "b21618fbbf4064b5",
   "lastOpenFiles": [
+    "笔记/笔记_Rust.md",
     "笔记/笔记_python.md",
     "笔记/笔记_pyautogui.md",
     "笔记/笔记_ansible.md",
@@ -138,7 +131,6 @@
     "笔记/笔记_flume.md",
     "笔记/笔记_hadoop.md",
     "笔记/笔记_Hive.md",
-    "笔记/笔记_jupyter.md",
-    "笔记/笔记_linux环境配置.md"
+    "笔记/笔记_jupyter.md"
   ]
 }
