@@ -1,6 +1,5 @@
 import pyautogui
 import keyboard
-import asyncio
 
 
 def soldItem():
@@ -35,4 +34,3 @@ keyboard.add_hotkey('F5', soldItem)
 keyboard.add_hotkey('F6', recast)
 
 keyboard.wait()
-	
