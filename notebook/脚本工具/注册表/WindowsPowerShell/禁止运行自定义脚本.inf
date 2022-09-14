@@ -1,0 +1,8 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultInstall]
+AddReg=powershell
+
+[powershell]
+hklm,"SOFTWARE\\Microsoft\\PowerShell\\1\\ShellIds\\Microsoft.PowerShell","ExecutionPolicy",,"Restricted"
