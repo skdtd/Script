@@ -7,3 +7,4 @@ if not exist %GenFile% (
 )
 
 copy %SourceFile% %GenFile%\Microsoft.PowerShell_profile.ps1
+pause
