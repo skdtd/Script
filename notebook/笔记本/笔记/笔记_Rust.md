@@ -2,7 +2,7 @@
 ## [官网](https://www.rust-lang.org/)
 ## wsl安装
 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-
+## [cmake](https://cmake.org/download/)
 # 启动命令
 ```bash
 # error: linker `link.exe` not found
