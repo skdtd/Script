@@ -3,7 +3,6 @@ import base64
 import datetime
 import os.path
 import sys
-import uuid
 from os.path import dirname, join
 
 from flask import Flask, jsonify, request, render_template

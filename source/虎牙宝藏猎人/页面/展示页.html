@@ -189,21 +189,23 @@
             }
         }
         
-        // xmlhttp.open("GET", "http://" + server_ip + ":8899/pull", true);
-        xmlhttp.open("GET", "http://localhost:8899/pull", true);
+        xmlhttp.open("GET", "http://" + server_ip + ":8899/pull", false);
+        // xmlhttp.open("GET", "http://localhost:8899/pull", false);
         xmlhttp.send();
+        loadAd()
     }
 </script>
 
     <select id="server_ip" onchange="loadXMLDoc()">
-        <option value ="49.235.109.183" selected>服务器1</option>
+        <!-- <option value ="localhost" selected>测试</option> -->
+        <option value ="49.235.109.183">服务器1</option>
         <option value ="121.4.27.170">服务器2</option>
     </select></br>
     <table width='810px' cellspacing="0" cellpadding="0">
         <tbody id="container">
         </tbody>
     </table>
-    <img style="position: absolute; top: 80; left: 810;" src="C:\Users\Administrator\Desktop\下载.png"/>
+    <img style="position: absolute; top: 10; left: 810;" id="qr"/>
     <div id='ad'></div>
 </body>
 <script>
@@ -222,21 +224,40 @@
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
         }
         xmlhttp.onreadystatechange = function () {
-            var obj = JSON.parse(xmlhttp.responseText)
+            var obj;
+            try {
+                obj = JSON.parse(xmlhttp.responseText)
+            } catch(error) {
+                // 发生异常时要执行的操作
+            }
+            // var obj = JSON.parse(xmlhttp.responseText)
             for (idx in obj) {
-                if (obj[idx][1] == "ad"){
+                if (obj[idx][1] == "ad") {
                     var ad = document.querySelector('#ad')
                     ad.innerHTML = ""
                     var p = document.createElement("p")
                     p.innerHTML = obj[idx][3]
                     p.style = 'max-width: 810px;' + obj[idx][4]
                     ad.appendChild(p)
+                } else if (obj[idx][1] == "qr") {
+                    var xh
+                    if (window.XMLHttpRequest) {
+                        xh = new XMLHttpRequest()
+                    } else {
+                        xh = new ActiveXObject("Microsoft.XMLHTTP")
+                    }
+                    xh.onreadystatechange = function () {
+                        var qr = document.querySelector('#qr')
+                        qr.src = xh.responseText
+                    }
+                    console.log("http://" + server_ip +":8899/ad?action=pic&data=" + obj[idx][4])
+                    xh.open("GET", "http://" + server_ip +":8899/ad?action=pic&data=" + obj[idx][4], false)
+                    xh.send()
                 }
             }
         }
-        // xmlhttp.open("GET", "http://" + server_ip + ":8899/ad", true);
-        xmlhttp.open("GET", "http://localhost:8899/ad", true);
-        xmlhttp.send();
+        xmlhttp.open("GET", "http://" + server_ip + ":8899/ad", false)
+        xmlhttp.send()
     }
     loadAd()
 </script>

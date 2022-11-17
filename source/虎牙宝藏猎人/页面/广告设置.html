@@ -13,9 +13,9 @@
     <label>服务器: </label>
     <select id="server_ip" onChange="select()">
         <option disabled selected value ="-1">--选择服务器--</option>
-        <option value ="localhost">测试</option>
-        <!-- <option value ="49.235.109.183">服务器1</option> -->
-        <!-- <option value ="121.4.27.170">服务器2</option> -->
+        <!-- <option value ="localhost">测试</option> -->
+        <option value ="49.235.109.183">服务器1</option>
+        <option value ="121.4.27.170">服务器2</option>
     </select></br>
     <hr>
     <h3>广告语</h3>
@@ -148,9 +148,8 @@ function flash_pre(elm){
                 pre.appendChild(img)
             }
         }
-        xmlhttp.open("POST", "http://" + server_ip +":8899/ad?action=pic&data=" + elm[elm.selectedIndex].value, true)
+        xmlhttp.open("POST", "http://" + server_ip +":8899/ad?action=pic&data=" + elm[elm.selectedIndex].value, false)
         xmlhttp.send()
-        return
     }
 }
 // 获取数据
@@ -194,7 +193,7 @@ function select(){
             });
         }
     }
-    xmlhttp.open("POST", "http://" + server_ip +":8899/ad?action=select", true)
+    xmlhttp.open("POST", "http://" + server_ip +":8899/ad?action=select", false)
     xmlhttp.send()
     // 初始化图片选项
     // TODO
@@ -224,7 +223,7 @@ function del(val){
             alert('删除完毕')
         }
     }
-    xmlhttp.open("GET", "http://" + server_ip +":8899/ad?action=delete&data=" + del_val[del_val.selectedIndex].id, true)
+    xmlhttp.open("GET", "http://" + server_ip +":8899/ad?action=delete&data=" + del_val[del_val.selectedIndex].id, false)
     xmlhttp.send()
 }
 
@@ -254,7 +253,7 @@ function insert(val){
                 select()
             }
         }
-        xmlhttp.open("POST", "http://" + server_ip +":8899/ad?" + args, true)
+        xmlhttp.open("POST", "http://" + server_ip +":8899/ad?" + args, false)
         xmlhttp.send()
         alert('插入数据完毕')
     } else if (val == 'qr') {
@@ -269,7 +268,7 @@ function insert(val){
             }
             var form = new FormData()
             form.append("file", insert_qr.files[0])
-            xmlhttp.open("POST", "http://" + server_ip +":8899/ad?" + args, true)
+            xmlhttp.open("POST", "http://" + server_ip +":8899/ad?" + args, false)
             xmlhttp.send(form)
             alert('插入数据完毕')
         } else {
@@ -303,7 +302,7 @@ function deploy(val){
     }
     var tag = document.querySelector('#del_' + val)
     args = "type=" + val + "&action=deploy&data=" + tag[tag.selectedIndex].id
-    xmlhttp.open("POST", "http://" + server_ip +":8899/ad?" + args, true)
+    xmlhttp.open("POST", "http://" + server_ip +":8899/ad?" + args, false)
     xmlhttp.send()
 }
 </script>
