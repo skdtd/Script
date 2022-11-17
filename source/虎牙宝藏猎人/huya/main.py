@@ -1,5 +1,9 @@
 # coding: utf-8
+import base64
+import datetime
+import os.path
 import sys
+import uuid
 from os.path import dirname, join
 
 from flask import Flask, jsonify, request, render_template
@@ -25,10 +29,11 @@ def login():
         return "<h1>没有捕获到可用二维码<h1>"
 
 
-@app.route('/pull', methods=['get'])
+@app.route('/pull', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def pull():
     res = dao.select(dao.SELECT_MAP)
+    count_list = dao.select_date_count(str(datetime.datetime.now().date()))
     ls = [{
         'id': v1,
         'font': v2,
@@ -41,14 +46,16 @@ def pull():
         f = _id % 20
         if f != 0:
             [ls.pop(0) for _ in range(20 - f)]
-    lls = []
+    rl = []
+    total = sum([x[1] for x in count_list])
+    _map = {"data": rl, "count": count_list, "total": total}
     for o in range(20):
-        lls.append([])
+        rl.append([])
         for i in range(6):
             if i * 20 + o < len(ls):
-                lls[o].append(ls[i * 20 + o])
+                rl[o].append(ls[i * 20 + o])
 
-    return jsonify(lls)
+    return jsonify(_map)
 
 
 @app.route('/select_date', methods=['get'])
@@ -63,6 +70,7 @@ def select_date():
 @cross_origin(supports_credentials=True)
 def select_by_date():
     res = dao.select_by_date(request.args.get('date'))
+    count_list = dao.select_date_count(request.args.get('date'))
     ls = [{
         'id': v1,
         'font': v2,
@@ -70,15 +78,18 @@ def select_by_date():
         'time_stamp': v4,
         'result': v5}
         for v1, v2, v3, v4, v5 in res]
-    lls = []
+    rl = []
+    total = sum([x[1] for x in count_list])
+    _map = {"data": rl, "count": count_list, "total": total}
+
     for o in range(20):
-        lls.append([])
+        rl.append([])
         for i in range(99999):
             if i * 20 + o < len(ls):
-                lls[o].append(ls[i * 20 + o])
+                rl[o].append(ls[i * 20 + o])
             else:
                 break
-    return jsonify(lls)
+    return jsonify(_map)
 
 
 @app.route('/color', methods=['get'])
@@ -108,6 +119,46 @@ def update():
     for k, [f, b] in ds.items():
         dao.update(dao.UPDATE_MAP, (f, b, k))
     return '更新成功'
+
+
+@app.route('/ad', methods=['POST', 'GET'])
+def add_advertisement():
+    data = request.args.get('data')
+    param = request.args.get('parameter')
+    _type = request.args.get('type')
+    action = request.args.get('action')
+    res = "OK"
+    if action == "delete":
+        # 删除以data为索引的数据
+        if data is not None and data.strip() != "":
+            dao.delete_ad(data)
+    elif action == "select":
+        res = dao.select_ad()
+    elif action == "insert":
+        if _type == "qr":
+            if not os.path.exists("pic"):
+                os.makedirs("pic")
+            f = request.files.get('file')
+            param = f.filename
+            data = os.path.abspath(os.path.join("pic", param))
+            header = "data:{};base64,".format(f.content_type)
+            b = str(base64.b64encode(f.stream.read()), encoding="utf-8")
+            with open(data, "w+") as f:
+                f.write(header + b)
+        dao.insert_ad(_type, data, param)
+    elif action == "pic":
+        if data == '':
+            return ''
+        fn = os.path.abspath(os.path.join("pic", data))
+        if not os.path.exists(fn):
+            return ''
+        res = open(fn, 'r').read()
+    elif action == "deploy":
+        dao.deploy_ad(_type, data)
+    else:
+        res = dao.select_enable_ad()
+        res = jsonify(res)
+    return res
 
 
 # MAIN #################################################################################################################

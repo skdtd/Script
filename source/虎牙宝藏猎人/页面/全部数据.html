@@ -13,8 +13,8 @@
     <label>服务器: </label>
     <select id="server_ip" onChange="update_date()">
         <option value="-1" selected>--选择服务器--</option>
-        <option value ="139.198.169.95">青云</option>
-        <option value ="121.4.27.170">腾讯云</option>
+        <option value ="49.235.109.183">服务器1</option>
+        <option value ="121.4.27.170">服务器2</option>
     </select></br>
     <label>选择日期: </label>
     <select id="date_set" onChange="loadXMLDoc()">
@@ -23,7 +23,6 @@
 
     <table border="1" align="left" cellspacing="0" cellpadding="0">
         <tbody id="container">
-            
         </tbody>
     </table>
 
@@ -48,17 +47,39 @@
                     var container = document.querySelector('#container')
                     container.innerHTML = ""
                     var obj = JSON.parse(xmlhttp.responseText)
-                    console.log(obj)
+                    // console.log(obj)
+
+                    table_sum = document.createElement("table")
+                    tBody_sum = document.createElement("tBody")
+                    htr = tBody_sum.insertRow()
+                    for (const idx in obj.count) {
+                        key = htr.insertCell()
+                        value = htr.insertCell()
+                        key.width = 60
+                        value.width = 60
+                        key.align = "center"
+                        value.align = "center"
+                        if (idx != 5) {
+                            value.style = "border-right: solid 1px;"
+                        }
+                        var bkey = document.createElement("b")
+                        var bvalue = document.createElement("b")
+                        bkey.innerHTML = obj.count[idx][0]
+                        bvalue.innerHTML = obj.count[idx][1] + "<br/>" + Math.floor(obj.count[idx][1] / obj.total * 10000) /100 + "%"
+                        key.append(bkey)
+                        value.append(bvalue)
+                    }
+
                     table = document.createElement("table")
                     tBody = document.createElement("tBody")
-                    for (const outter in obj) {
+                    for (const outter in obj.data) {
                         tr = tBody.insertRow()
-                        for (const inner in obj[outter]) {
+                        for (const inner in obj.data[outter]) {
                             // console.log(obj[idx])
-                            ts = obj[outter][inner]['time_stamp']
-                            res = obj[outter][inner]['result']
-                            font = obj[outter][inner]['font']
-                            bg = obj[outter][inner]['bg']
+                            ts = obj.data[outter][inner]['time_stamp']
+                            res = obj.data[outter][inner]['result']
+                            font = obj.data[outter][inner]['font']
+                            bg = obj.data[outter][inner]['bg']
                             tsCell = tr.insertCell()
                             tsCell.style = "border-left:#cccccc solid 2px; border-top:#cccccc solid 2px"
                             tsCell.innerHTML = ts
@@ -68,12 +89,14 @@
                         }
                     } 
                     
+                    table_sum.appendChild(tBody_sum)
                     table.appendChild(tBody)
+                    container.appendChild(table_sum)
                     container.appendChild(table)
                 }
             }
-            // var ss = xmlhttp.open("GET", "http://localhost:8899/select_by_date?date=" + val, true)
-            var ss = xmlhttp.open("GET", "http://" + server_ip +":8899/select_by_date?date=" + date_set, true)
+            // xmlhttp.open("GET", "http://localhost:8899/select_by_date?date=" + date_set, true)
+            xmlhttp.open("GET", "http://" + server_ip +":8899/select_by_date?date=" + date_set, true)
             xmlhttp.send()
         }
         function update_date() {

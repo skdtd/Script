@@ -30,20 +30,34 @@ class DB:
               "#CC99FF", "#CCCCFF", "#CCFFFF", "#FF00FF", "#FF33FF", "#FF66FF", "#FF99FF", "#FFCCFF", "#FFFFFF"]
 
     DATAS = ['大本营', '丛林', '沙漠', '峡谷', '海底', '孤岛', '沉船']
+    # table
     DATA_TABLE = '''CREATE TABLE IF NOT EXISTS `live`( `id` INTEGER PRIMARY KEY, `room_num` VARCHAR(100) NOT NULL, `date` VARCHAR(100) NOT NULL, `time_stamp` VARCHAR(100) NOT NULL, `res` VARCHAR(100) NOT NULL, `url` VARCHAR(100) NOT NULL );'''
     COLORS_TABLE = '''CREATE TABLE IF NOT EXISTS `colors`( `color` VARCHAR(100) NOT NULL );'''
     MAP_TABLE = '''CREATE TABLE IF NOT EXISTS `map`( `res` VARCHAR(100) NOT NULL, `font` VARCHAR(100) NOT NULL, `bg` VARCHAR(100) NOT NULL );'''
+    AD_TABLE = '''CREATE TABLE IF NOT EXISTS `ad`(`id` INTEGER PRIMARY KEY,`type` VARCHAR(10) NOT NULL, `enable` VARCHAR(10) NOT NULL, `content` VARCHAR(256) NOT NULL, `param` VARCHAR(256));'''
+    # insert
     INSERT_DATA = '''INSERT INTO live ( `id`, `room_num`, `date`, `time_stamp`, `res`, `url` ) VALUES (NULL, ?, ?, ?, ?, ?);'''
     INSERT_COLOR = '''INSERT INTO colors ( `color` ) VALUES (?);'''
     INSERT_MAP = '''INSERT INTO map ( `res`, `font`, `bg` ) VALUES (?, "#000000", "#FFFFFF");'''
+    INSERT_AD = '''insert into `ad` (`id`, `type`, `enable`, `content`, `param`) VALUES (NULL, ?, ?, ?, ?);'''
+    # delete
+    DELETE_AD = '''DELETE FROM `ad` WHERE `id` in (?)'''
+    # update
     UPDATE_MAP = '''UPDATE map SET `font` = (?), `bg` = (?) WHERE `res` = (?)'''
+    UPDATE_AD_DISABLE = '''UPDATE ad SET enable='0' WHERE "type"=(?) and enable='1';'''
+    UPDATE_AD_ENABLE = '''UPDATE ad SET enable='1' WHERE "id"=(?)'''
+
+    # select
+    SELECT_AD = '''SELECT `id`, `type`, `enable`, `content`, `param` FROM `ad`;'''
+    SELECT_ENABLE_AD = '''SELECT `id`, `type`, `enable`, `content`, `param` FROM `ad` where `enable` = '1';'''
     SELECT_DATA_BY_ID = '''SELECT * from live WHERE `id`=(?);'''
     SELECT_ALL_DATA = '''SELECT * from live;'''
     SELECT_BY_DATA = '''SELECT `live`.`id`, `map`.`font`, `map`.`bg`, `live`.`time_stamp`, `live`.`res` FROM `live` LEFT JOIN `map` ON `map`.`res` = `live`.`res` where `live`.`date` = (?) ORDER BY `live`.`id`;'''
     SELECT_DATA_LIST = '''select DISTINCT date from live;'''
     SELECT_ALL_COLOR = '''SELECT * from colors;'''
     SELECT_ALL_MAP = '''SELECT * from map;'''
-    SELECT_MAP = '''select * from (SELECT `live`.`id`, `map`.`font`, `map`.`bg`, `live`.`time_stamp`, `live`.`res` FROM `live` LEFT JOIN `map` ON `map`.`res` = `live`.`res`ORDER BY `live`.`id` DESC LIMIT 120) t order by t.`id`'''
+    SELECT_MAP = '''select * from (SELECT `live`.`id`, `map`.`font`, `map`.`bg`, `live`.`time_stamp`, `live`.`res` FROM `live` LEFT JOIN `map` ON `map`.`res` = `live`.`res`ORDER BY `live`.`id` DESC LIMIT 120) t order by t.`id`;'''
+    SELECT_DATA_COUNT = '''select `live`.`res`, count(`live`.`res`),`MAP`.`font`,`MAP`.`bg` from live LEFT JOIN `map` ON `MAP`.`res` = `live`.`res` where date in (?) group by `live`.`res`;'''
 
     def __init__(self, file_name):
         self.file_name = file_name
@@ -52,6 +66,7 @@ class DB:
         self.create_table(DB.DATA_TABLE)
         self.create_table(DB.COLORS_TABLE)
         self.create_table(DB.MAP_TABLE)
+        self.create_table(DB.AD_TABLE)
         cs = [x[0] for x in self.select(self.SELECT_ALL_COLOR)]
         [self.COLORS.remove(x) for x in cs if x in self.COLORS]
         [self.insert(self.INSERT_COLOR, (x,)) for x in self.COLORS]
@@ -104,6 +119,16 @@ class DB:
         Log.info("查询SQL: {}, condition: {}".format(sql, cond))
         return res
 
+    def delete(self, sql, cond=None):
+        self.start()
+        if cond:
+            self.cursor.execute(sql, cond)
+        else:
+            self.cursor.execute(sql)
+        self.conn.commit()
+        self.close()
+        Log.info("删除SQL: {}, condition: {}".format(sql, cond))
+
     def close(self):
         self.cursor.close()
         self.conn.close()
@@ -141,8 +166,10 @@ class HuyaDao(DB):
         self.insert(DB.INSERT_DATA,
                     (entry.get_root_num(), entry.get_date(),
                      entry.get_time_stamp(), entry.get_result(), entry.get_url()))
-    def update_map(self):
-        pass
+
+    def select_date_count(self, _date):
+        return self.select(DB.SELECT_DATA_COUNT, (_date,))
+
     def select_show_data(self):
         return self.select(DB.SELECT_MAP)
 
@@ -154,6 +181,22 @@ class HuyaDao(DB):
 
     def select_all_map(self):
         return self.select(DB.SELECT_ALL_MAP)
+
+    def insert_ad(self, _type, data, param):
+        return self.insert(DB.INSERT_AD, (_type, '0', data, param,))
+
+    def select_ad(self):
+        return self.select(DB.SELECT_AD)
+
+    def select_enable_ad(self):
+        return self.select(DB.SELECT_ENABLE_AD)
+
+    def deploy_ad(self, _type, _data):
+        self.update(DB.UPDATE_AD_DISABLE, (_type,))
+        return self.update(DB.UPDATE_AD_ENABLE, (_data,))
+
+    def delete_ad(self, _data):
+        return self.delete(DB.DELETE_AD, _data, )
 
 
 if __name__ == "__main__":
