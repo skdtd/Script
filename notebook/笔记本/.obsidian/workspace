@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "笔记/笔记_pyautogui.md",
+            "file": "笔记/笔记_杂项.md",
             "mode": "source",
             "source": false
           }
@@ -77,7 +77,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "笔记/笔记_pyautogui.md",
+                "file": "笔记/笔记_杂项.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -94,7 +94,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "笔记/笔记_pyautogui.md",
+                "file": "笔记/笔记_杂项.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -117,7 +117,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "笔记/笔记_pyautogui.md"
+                "file": "笔记/笔记_杂项.md"
               }
             }
           }
@@ -130,15 +130,15 @@
   },
   "active": "b21618fbbf4064b5",
   "lastOpenFiles": [
-    "笔记/笔记_pyinstaller.md",
-    "笔记/笔记_pywin32.md",
-    "笔记/笔记_ansible.md",
-    "笔记/笔记_Hive.md",
-    "书签.md",
-    "素材/Hive架构图.png",
-    "笔记/笔记_SpringClould.md",
     "笔记/笔记_shell.md",
+    "笔记/笔记_pyautogui.md",
+    "笔记/笔记_pyinstaller.md",
+    "笔记/笔记_python.md",
+    "笔记/笔记_pywin32.md",
     "笔记/笔记_Rust.md",
-    "笔记/笔记_vagrant.md"
+    "笔记/笔记_SpringClould.md",
+    "笔记/笔记_vagrant.md",
+    "笔记/笔记_vcpkg.md",
+    "笔记/笔记_yolo.md"
   ]
 }
