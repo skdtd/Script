@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" id="drop_zone">
+<head>
+    <meta charset="UTF-8">
+    <meta name="google" content="notranslate" />
+    <title>展示页</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <label >行数:</label>
+    <input id="row" type="number" min=1 max=20 step=1 value=10 onchange="updata_table()">
+    <label >列数:</label>
+    <input id="col" type="number" min=1 max=10 step=1 value=10 onchange="updata_table()">
+    <label >背景图:</label>
+    <input id="bg_size" type="number" min=0 max=100 step=1 value=100 onchange="setBackgrand()">
+    <div>
+        <table id="data_table"></table>
+    </div>
+</body>
+
+
+
+
+<script>
+    var bg
+    drop_zone.ondragover = (e) => {e.preventDefault()}
+    drop_zone.ondrop = (e) => {
+        e.preventDefault()
+        file = e.dataTransfer.files[0]
+        var reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () { 
+            drop_zone.style = bg = "background: url('" + this.result + "');background-size: " + bg_size.value + "%;"
+        }
+    }
+    function setBackgrand(){
+        drop_zone.style = bg + 'background-size: ' + bg_size.value + '%;'
+    }
+    // test data
+    obj = {"count":{},"data":[[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"]]}
+    obj = []
+    for (var x = 121; x < 285; x++){
+        obj.push(x)
+    }
+    // 重新切分数组
+    ls = []
+    var row = document.getElementById('row').value
+    for (idx in obj){
+        if (ls[idx % row] == undefined) ls[idx % row] = []
+        ls[idx % row].push(obj[idx])
+    }
+    console.log(ls)
+    // 更新表
+    function updata_table(){
+        data_table.innerHTML = ''
+        document.createElement('th')
+        var row = document.getElementById('row')
+        var col = document.getElementById('col')
+        if (parseInt(row.value) > row.max) {
+            row.value = row.max
+        }
+        if (parseInt(col.value) > col.max) {
+            col.value = col.max
+        }
+        if (parseInt(row.value) < row.min) {
+            row.value = row.min
+        }
+        if (parseInt(col.value) < col.min) {
+            col.value = col.min
+        }
+        for (var r = 0; r < row.value; r++){
+            var tr = document.createElement('tr')
+            for (var c = 0; c < col.value; c++){
+                var td = document.createElement('td')
+                var b = document.createElement('b')
+                b.innerHTML = "123"
+                b.style = "color: red"
+                td.innerHTML = "xx:xx"
+                td.appendChild(b)
+                tr.appendChild(td)
+            }
+            data_table.appendChild(tr)
+        }
+    }
+    updata_table()
+</script>
+</html>
