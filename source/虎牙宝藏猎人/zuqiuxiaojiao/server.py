@@ -1,18 +1,15 @@
 # coding=utf-8
 import os
-import sqlite3
 import sys
 from os.path import dirname, join
-from sqlite3 import Connection
-from typing import Any
-
-from _sqlite3 import Cursor
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.serving import make_server
 
-app = Flask(__name__, template_folder=dirname(sys.argv[0]))
-CORS(app, supports_credentials=True)  # 全局跨域
+import sqlite3
+
+from sqlite3 import Cursor, Connection
+from typing import Any
 
 
 class Dao:
@@ -56,6 +53,9 @@ class Dao:
                     [bg] TEXT);''')
 
 
+app = Flask(__name__, template_folder=dirname(sys.argv[0]))
+CORS(app, supports_credentials=True)  # 全局跨域
+
 dao = Dao(file_name=join(dirname(sys.argv[0]), os.path.join(os.path.expanduser('~'), "Desktop", 'test.db')))
 
 
@@ -67,8 +67,8 @@ def replace_sql(sql: str, key: str, sub: str):
 def pull():
     sql = '''SELECT `id`, `res`, `font`, `bg`, `date`, `time_stamp` 
             FROM(
-                SELECT tz.id, tc.res, tc.font, tc.bg, tz.date, tz.time_stamp
-                FROM t_color tc LEFT JOIN t_zuqiu tz ON tc.res = tz.res
+                SELECT tz.id, tz.res, tc.font, tc.bg, tz.date, tz.time_stamp
+                FROM t_zuqiu tz LEFT JOIN t_color tc ON tc.res = tz.res
                 %date%
                 ORDER BY tz.id DESC %limit%)
             ORDER BY id'''
