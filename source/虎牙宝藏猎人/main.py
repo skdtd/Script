@@ -14,15 +14,6 @@ from werkzeug.serving import make_server
 app = Flask(__name__, template_folder=dirname(sys.argv[0]))
 CORS(app, supports_credentials=True)  # 全局跨域
 
-DIRE = {
-    'lt': '左上',
-    'mt': '中上',
-    'rt': '右上',
-    'lb': '左下',
-    'mb': '中下',
-    'rb': '右下'
-}
-
 
 class Dao:
     def __init__(self, file_name=':memory:'):
