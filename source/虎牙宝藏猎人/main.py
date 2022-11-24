@@ -92,6 +92,18 @@ def pull():
     return jsonify(res)
 
 
+@app.route('/count', methods=['GET'])
+def count():
+    _date = request.args.get("date")
+    if not _date:
+        return jsonify([])
+    sql = '''SELECT res, count(res) FROM t_zuqiu WHERE date = (?) GROUP BY res'''
+    res = dao.exec(sql, _date)
+    s = sum([x[1] for x in res])
+    res = [[k, v / s] for k, v in res]
+    return jsonify(res)
+
+
 @app.route('/color', methods=['GET', 'POST'])
 def color():
     if request.method == 'GET':

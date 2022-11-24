@@ -16,6 +16,8 @@
         }
         td{
             border: 1px solid;
+            text-align: center;
+            width: 110px;
         }
     </style>
 </head>
@@ -27,6 +29,7 @@
     <label >背景图:</label>
     <input id="bg_size" type="number" min=0 max=100 step=1 value=100 onchange="setBackgrand()">
     <div>
+        <table id="data_conut"></table>
         <table id="data_table"></table>
     </div>
 </body>
@@ -115,8 +118,23 @@
             col.value = col.min
         }
         
-        // 获取数据
-        var url = 'pull?date=' + new Date().toLocaleDateString() + '&limit=' + row.value * col.value
+        // 获取数据(统计栏)
+        var date = new Date().toLocaleDateString()
+        var url = 'count?date=' + date
+        ajax_method(url, null, 'GET', (resp) => {
+            var obj = JSON.parse(resp)
+            console.log(obj)
+            data_conut.innerHTML = ''
+            var tr = document.createElement('tr')
+            for (var i = 0; i < obj.length; i++) {
+                var td = document.createElement('td')
+                td.innerHTML=DIRE[obj[i][0]] + '</br>' +  (obj[i][1] * 100).toFixed(2) + "%"
+                tr.append(td)
+            }
+            data_conut.append(tr)
+        })
+        // 获取数据(数据栏)
+        var url = 'pull?date=' + date + '&limit=' + row.value * col.value
         ajax_method(url, null, 'GET', (resp) => {
             var obj = JSON.parse(resp)
             var ls = []
@@ -140,7 +158,6 @@
             if (parseInt(col.value) < col.min) {
                 col.value = col.min
             }
-            console.log(ls[0][0])
             data_table.innerHTML = ''
             for (var r = 0; r < row.value; r++){
                 var tr = document.createElement('tr')
@@ -148,8 +165,7 @@
                     var td = document.createElement('td')
                     var b = document.createElement('b')
                     b.innerHTML = DIRE[ls[r][c][1]]
-                    console.log()
-                    b.style = "color: " + ls[r][c][2] + "; background: " + ls[r][c][3] + ";"
+                    td.style = "color: " + ls[r][c][2] + "; background: " + ls[r][c][3] + ";"
                     td.innerHTML = ls[r][c][5]
                     td.appendChild(b)
                     tr.appendChild(td)
