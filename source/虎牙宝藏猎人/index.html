@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" id="drop_zone">
+<head>
+    <meta charset="UTF-8">
+    <meta name="google" content="notranslate" />
+    <title>展示页</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+        table{
+            font-size: 22px;
+            Border-spacing: 0;
+        }
+        td{
+            border: 1px solid;
+        }
+    </style>
+</head>
+<body>
+    <label >行数:</label>
+    <input id="row" type="number" min=1 max=20 step=1 value=10 onchange="updata_table()">
+    <label >列数:</label>
+    <input id="col" type="number" min=1 max=10 step=1 value=10 onchange="updata_table()">
+    <label >背景图:</label>
+    <input id="bg_size" type="number" min=0 max=100 step=1 value=100 onchange="setBackgrand()">
+    <div>
+        <table id="data_table"></table>
+    </div>
+</body>
+
+
+
+
+<script>
+    
+    var DIRE = {
+        'tl': '左上',
+        'tm': '中上',
+        'tr': '右上',
+        'bl': '左下',
+        'bm': '中下',
+        'br': '右下'
+    }
+
+    var server_ip = 'localhost'
+    var server_port = 8899
+    function ajax_method(url, data, method, success, async) {
+        var ajax = new XMLHttpRequest()
+        url = 'http://' + server_ip + ':' + server_port + '/' + url
+        ajax.open(method, url, async)
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState == 4 && ajax.status == 200) {
+                if (success){
+                    success(ajax.responseText)
+                }
+            } else {
+                // nothing todo
+            }
+        }
+        if (method.toUpperCase() == 'GET') {
+            if (data) {
+                url += '?'
+                url += data
+            }
+            ajax.send()
+        } else if (method.toUpperCase() == 'POST'){
+            ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+            if (data) {
+                ajax.send(data)
+            } else {
+                ajax.send()
+            }
+        } else {
+            console.log('Unsupported method')
+        }
+    }
+
+    var bg
+    drop_zone.ondragover = (e) => {e.preventDefault()}
+    drop_zone.ondrop = (e) => {
+        e.preventDefault()
+        file = e.dataTransfer.files[0]
+        var reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () { 
+            drop_zone.style = bg = "background: url('" + this.result + "');background-size: " + bg_size.value + "%;"
+        }
+    }
+    function setBackgrand(){
+        drop_zone.style = bg + 'background-size: ' + bg_size.value + '%;'
+    }
+    // test data
+    obj = {"count":{},"data":[[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"]]}
+    obj = []
+    for (var x = 121; x < 285; x++){
+        obj.push(x)
+    }
+    // 更新表
+    function updata_table(){
+        var row = document.getElementById('row')
+        var col = document.getElementById('col')
+        if (parseInt(row.value) > row.max) {
+            row.value = row.max
+        }
+        if (parseInt(col.value) > col.max) {
+            col.value = col.max
+        }
+        if (parseInt(row.value) < row.min) {
+            row.value = row.min
+        }
+        if (parseInt(col.value) < col.min) {
+            col.value = col.min
+        }
+        
+        // 获取数据
+        var url = 'pull?date=' + new Date().toLocaleDateString() + '&limit=' + row.value * col.value
+        ajax_method(url, null, 'GET', (resp) => {
+            var obj = JSON.parse(resp)
+            var ls = []
+            var row = document.getElementById('row').value
+            for (idx in obj){
+                if (ls[idx % row] == undefined) ls[idx % row] = []
+                ls[idx % row].push(obj[idx])
+            }
+            // 更新页面
+            var row = document.getElementById('row')
+            var col = document.getElementById('col')
+            if (parseInt(row.value) > row.max) {
+                row.value = row.max
+            }
+            if (parseInt(col.value) > col.max) {
+                col.value = col.max
+            }
+            if (parseInt(row.value) < row.min) {
+                row.value = row.min
+            }
+            if (parseInt(col.value) < col.min) {
+                col.value = col.min
+            }
+            console.log(ls[0][0])
+            data_table.innerHTML = ''
+            for (var r = 0; r < row.value; r++){
+                var tr = document.createElement('tr')
+                for (var c = 0; c < col.value; c++){
+                    var td = document.createElement('td')
+                    var b = document.createElement('b')
+                    b.innerHTML = DIRE[ls[r][c][1]]
+                    console.log()
+                    b.style = "color: " + ls[r][c][2] + "; background: " + ls[r][c][3] + ";"
+                    td.innerHTML = ls[r][c][5]
+                    td.appendChild(b)
+                    tr.appendChild(td)
+                }
+                data_table.appendChild(tr)
+            }
+        })
+    }
+    updata_table()
+</script>
+</html>
