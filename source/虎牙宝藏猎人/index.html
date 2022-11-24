@@ -28,6 +28,8 @@
     <input id="col" type="number" min=1 max=10 step=1 value=10 onchange="updata_table()">
     <label >背景图:</label>
     <input id="bg_size" type="number" min=0 max=100 step=1 value=100 onchange="setBackgrand()">
+    <label >刷新时间:</label>
+    <input id="delay_time" type="number" min=1 max=10 step=1 value=5 onchange="fresh()">
     <div>
         <table id="data_conut"></table>
         <table id="data_table"></table>
@@ -103,6 +105,7 @@
     }
     // 更新表
     function updata_table(){
+        console.log(new Date())
         var row = document.getElementById('row')
         var col = document.getElementById('col')
         if (parseInt(row.value) > row.max) {
@@ -123,7 +126,6 @@
         var url = 'count?date=' + date
         ajax_method(url, null, 'GET', (resp) => {
             var obj = JSON.parse(resp)
-            console.log(obj)
             data_conut.innerHTML = ''
             var tr = document.createElement('tr')
             for (var i = 0; i < obj.length; i++) {
@@ -160,20 +162,32 @@
             }
             data_table.innerHTML = ''
             for (var r = 0; r < row.value; r++){
-                var tr = document.createElement('tr')
-                for (var c = 0; c < col.value; c++){
-                    var td = document.createElement('td')
-                    var b = document.createElement('b')
-                    b.innerHTML = DIRE[ls[r][c][1]]
-                    td.style = "color: " + ls[r][c][2] + "; background: " + ls[r][c][3] + ";"
-                    td.innerHTML = ls[r][c][5]
-                    td.appendChild(b)
-                    tr.appendChild(td)
+                if (ls[r]){
+                    var tr = document.createElement('tr')
+                    for (var c = 0; c < col.value; c++){
+                        if (ls[r][c]){
+                            var td = document.createElement('td')
+                            var b = document.createElement('b')
+                            b.innerHTML = DIRE[ls[r][c][1]]
+                            td.style = "color: " + ls[r][c][2] + "; background: " + ls[r][c][3] + ";"
+                            td.innerHTML = ls[r][c][5]
+                            td.appendChild(b)
+                            tr.appendChild(td)
+                        }
+                    }
+                    data_table.appendChild(tr)
                 }
-                data_table.appendChild(tr)
             }
         })
     }
+    var timer
+    function fresh(){
+        if (timer){
+            clearInterval(timer)
+        }
+        timer = setInterval(updata_table, delay_time.value * 1000)
+    }
     updata_table()
+    fresh()
 </script>
 </html>
