@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" id="drop_zone">
+<head>
+    <meta charset="UTF-8">
+    <meta name="google" content="notranslate" />
+    <title>展示页</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+        table{
+            Border-spacing: 0;
+        }
+        td, th{
+            border: 1px solid;
+            text-align: center;
+            width: 110px;
+        }
+    </style>
+</head>
+<body>
+    <label >行数:</label>
+    <input id="row" type="number" min=1 max=20 step=1 value=10 onchange="updata_table()">
+    <label >列数:</label>
+    <input id="col" type="number" min=1 max=10 step=1 value=10 onchange="updata_table()">
+    <label >背景图:</label>
+    <input id="bg_size" type="number" min=0 max=100 step=1 value=100 onchange="setBackground()">
+    <label >刷新时间:</label>
+    <input id="delay_time" type="number" min=1 max=10 step=1 value=5 onchange="fresh()">
+    <div>
+        <table id="data_conut"></table>
+        <table id="data_table"></table>
+    </div>
+    <div id="ad"></div>
+</body>
+
+
+
+
+<script>
+    var DIRE = {
+        'LU': '左上',
+        'MU': '中上',
+        'RU': '右上',
+        'LD': '左下',
+        'MD': '中下',
+        'RD': '右下'
+    }
+    var OFF_PROB = {
+        'LU': '32.00%',
+        'MU': '32.00%',
+        'RU': '20.00%',
+        'LD': '7.00%',
+        'MD': '5.00%',
+        'RD': '4.00%'
+    }
+
+    // var server_ip = '49.235.109.183'
+    var server_ip = 'localhost'
+    var server_port = 8899
+    function ajax_method(url, data, method, success, async) {
+        var ajax = new XMLHttpRequest()
+        url = 'http://' + server_ip + ':' + server_port + '/' + url
+        ajax.open(method, url, async)
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState == 4 && ajax.status == 200) {
+                if (success){
+                    success(ajax.responseText)
+                }
+            } else {
+                // nothing todo
+            }
+        }
+        if (method.toUpperCase() == 'GET') {
+            if (data) {
+                url += '?'
+                url += data
+            }
+            ajax.send()
+        } else if (method.toUpperCase() == 'POST'){
+            ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+            if (data) {
+                ajax.send(data)
+            } else {
+                ajax.send()
+            }
+        } else {
+            console.log('Unsupported method')
+        }
+    }
+    
+    // 获取配置信息保存到全局
+    var settings
+    ajax_method('setting', null, 'GET', (resp) =>{
+        settings = JSON.parse(resp)
+    })
+    // var bg
+    // drop_zone.ondragover = (e) => {e.preventDefault()}
+    // drop_zone.ondrop = (e) => {
+    //     e.preventDefault()
+    //     file = e.dataTransfer.files[0]
+    //     var reader = new FileReader();
+    //     reader.readAsDataURL(file);
+    //     reader.onload = function () { 
+    //         drop_zone.style = bg = "background: url('" + this.result + "');background-size: " + bg_size.value + "%;"
+    //     }
+    // }
+    // function setBackground(){
+    //     drop_zone.style = bg + 'background-size: ' + bg_size.value + '%;'
+    // }
+    // 更新表
+    function updata_table(){
+        var row = settings['row_num'] ? settings['row_num'] : 20
+        var col = settings['col_num'] ? settings['col_num'] : 6
+        // 获取数据(统计栏)
+        var date = new Date().toLocaleDateString()
+        var url = 'count?date=' + date
+        ajax_method(url, null, 'GET', (resp) => {
+            var obj = JSON.parse(resp)
+            var tr_header = document.createElement('tr') // 表头
+            var tr_current = document.createElement('tr') // 当前概率
+            var tr_official = document.createElement('tr') // 官方概率
+            var th_sum = document.createElement('th') // 表头总数
+            var th_current = document.createElement('th') // 表头当前概率
+            var th_official = document.createElement('th') // 表头官方概率
+            tr_header.append(th_sum)
+            tr_current.append(th_current)
+            tr_official.append(th_official)
+            var sum = 0;
+            // 添加表头数据
+            for (idx in DIRE){
+                var th = document.createElement('th')
+                var num = obj[idx] ? obj[idx][0] : 0
+                var font = obj[idx] ? obj[idx][1] : ''
+                var bg = obj[idx] ? obj[idx][2] : ''
+                th.innerHTML = DIRE[idx] + ':' + num
+                th.style = 'color: ' + font + '; background: ' + bg + ';'
+                sum = sum + num
+                tr_header.append(th)
+            }
+            // 添加当前概率
+            for (idx in DIRE){
+                var td = document.createElement('td')
+                var n = obj[idx] ? obj[idx][0] : 0
+                td.innerHTML = (n / sum * 100).toFixed(2) + '%'
+                tr_current.append(td)
+                var td = document.createElement('td')
+                td.innerHTML = OFF_PROB[idx]
+                tr_official.append(td)
+            }
+            th_sum.innerHTML = '总数:' + sum
+            th_current.innerHTML = '当前概率'
+            th_official.innerHTML = '官方概率'
+            data_conut.innerHTML = ''
+            data_conut.append(tr_header)
+            data_conut.append(tr_current)
+            data_conut.append(tr_official)
+            // 添加该官方概率
+            var tr = document.createElement('tr')
+            for (var i = 0; i < obj.length; i++) {
+                var td = document.createElement('td')
+                td.innerHTML=DIRE[obj[i][0]] + '</br>' +  (obj[i][1] * 100).toFixed(2) + "%"
+                tr.append(td)
+            }
+            data_conut.append(tr)
+        })
+        // 获取数据(数据栏)
+        var url = 'pull?date=' + date + '&limit=' + row * col
+        ajax_method(url, null, 'GET', (resp) => {
+            var obj = JSON.parse(resp)
+            var row = settings['row_num'] ? settings['row_num'] : 20
+            var col = settings['col_num'] ? settings['col_num'] : 6
+            var start = row - obj[obj.length - 1][0] % row
+            if (start != row) {
+                for (var i = 0; i < start; i++) {
+                    obj.shift()
+                }
+            }
+            var ls = []
+            for (idx in obj){
+                if (ls[idx % row] == undefined) ls[idx % row] = []
+                ls[idx % row].push(obj[idx])
+            }
+            // 更新页面
+            data_table.innerHTML = ''
+            for (var r = 0; r < row; r++){
+                if (ls[r]){
+                    var tr = document.createElement('tr')
+                    for (var c = 0; c < col; c++){
+                        if (ls[r][c]){
+                            var td = document.createElement('td')
+                            var b = document.createElement('b')
+                            b.innerHTML = DIRE[ls[r][c][1]]
+                            td.style = "color: " + ls[r][c][2] + "; background: " + ls[r][c][3] + ";"
+                            td.innerHTML = ls[r][c][5]
+                            td.appendChild(b)
+                            tr.appendChild(td)
+                        }
+                    }
+                    data_table.appendChild(tr)
+                }
+            }
+        })
+    }
+    var timer
+    function fresh(){
+        if (timer){
+            clearInterval(timer)
+        }
+        timer = setInterval(updata_table, settings['fresh_speed'] * 1000)
+    }
+
+    function init_ad(){
+        // 添加文字广告
+        var ad_text = settings['ad_text']
+        var ad_size = settings['ad_size']
+        var ad_font = settings['ad_font']
+        var ad_bg = settings['ad_bg']
+        console.log(ad_text, ad_size,ad_font , ad_bg)
+        ad.innerHTML = ""
+        var p = document.createElement("p")
+        p.innerHTML = ad_text
+        p.style = 'max-width: 800px; color: ' + ad_font + '; background: ' + ad_bg + '; font-size:' + ad_size + 'px;'
+        ad.appendChild(p)
+
+        // 添加二维码
+        
+    }
+
+
+
+    updata_table()
+    fresh()
+    init_ad()
+</script>
+</html>
