@@ -55,6 +55,9 @@ class Dao:
                     [res] TEXT PRIMARY KEY,
                     [font] TEXT, 
                     [bg] TEXT);''')
+        self.exec('''CREATE TABLE IF NOT EXISTS [t_setting](
+                    [k] TEXT PRIMARY KEY,
+                    [v] TEXT);''')
 
 
 class Element(Enum):
@@ -113,10 +116,11 @@ class Collector:
                 s = ''.join([x for x in s if x.isupper()])
                 dao.exec('INSERT INTO t_zuqiu (id, date, time_stamp, res) VALUES(null, (?), (?), (?))',
                          str(datetime.now().date()).replace('-', '/'), str(datetime.now().time()).rsplit(":", 1)[0], s)
-                self.driver.refresh()
+                time.sleep(10)
+                # self.driver.refresh()
                 # print('刷新页面, 等待60秒')
                 # time.sleep(60)
-                break
+                # break
 
     def hunt(self):
         while True:

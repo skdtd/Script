@@ -1,15 +1,30 @@
 # coding=utf-8
-import os
+import base64
+import os.path
+import sqlite3
 import sys
-from os.path import dirname, join
+from os.path import dirname, join, expanduser, exists
+from sqlite3 import Connection
+from typing import Any
+
+from _sqlite3 import Cursor
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.serving import make_server
 
-import sqlite3
+app = Flask(__name__, template_folder=dirname(sys.argv[0]))
+CORS(app, supports_credentials=True)  # 全局跨域
 
-from sqlite3 import Cursor, Connection
-from typing import Any
+DIRE = {
+    'lt': '左上',
+    'mt': '中上',
+    'rt': '右上',
+    'lb': '左下',
+    'mb': '中下',
+    'rb': '右下'
+}
+
+FILE_DIR = join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop"))
 
 
 class Dao:
@@ -51,12 +66,9 @@ class Dao:
                     [res] TEXT PRIMARY KEY,
                     [font] TEXT, 
                     [bg] TEXT);''')
-
-
-app = Flask(__name__, template_folder=dirname(sys.argv[0]))
-CORS(app, supports_credentials=True)  # 全局跨域
-
-dao = Dao(file_name=join(dirname(sys.argv[0]), os.path.join(os.path.expanduser('~'), "Desktop", 'test.db')))
+        self.exec('''CREATE TABLE IF NOT EXISTS [t_setting](
+                    [k] TEXT PRIMARY KEY,
+                    [v] TEXT);''')
 
 
 def replace_sql(sql: str, key: str, sub: str):
@@ -65,21 +77,13 @@ def replace_sql(sql: str, key: str, sub: str):
 
 @app.route('/pull', methods=['GET'])
 def pull():
-    sql = '''SELECT `id`, `res`, `font`, `bg`, `date`, `time_stamp` 
-            FROM(
-                SELECT tz.id, tz.res, tc.font, tc.bg, tz.date, tz.time_stamp
-                FROM t_zuqiu tz LEFT JOIN t_color tc ON tc.res = tz.res
-                %date%
-                ORDER BY tz.id DESC %limit%)
-            ORDER BY id'''
-    _date = request.args.get("date")
     _limit = request.args.get("limit")
-
-    if _date:
-        sql = replace_sql(sql, 'date', 'WHERE tz.date = (?)')
     if _limit:
-        sql = replace_sql(sql, 'limit', 'LIMIT (?)')
-    res = dao.exec(sql, _date, _limit)
+        sql = '''SELECT tz.id, tz.date, tz.time_stamp, tz.res, tc.font, tc.bg  FROM t_zuqiu tz LEFT JOIN t_color tc 
+        ON tz.res = tc.res LIMIT (SELECT COUNT(res) FROM t_zuqiu) - (?),-1'''
+    else:
+        return jsonify([])
+    res = dao.exec(sql, _limit)
     return jsonify(res)
 
 
@@ -88,10 +92,10 @@ def count():
     _date = request.args.get("date")
     if not _date:
         return jsonify([])
-    sql = '''SELECT res, count(res) FROM t_zuqiu WHERE date = (?) GROUP BY res'''
+    sql = '''SELECT tz.res, count(tz.res), tc.font, tc.bg FROM t_zuqiu tz LEFT 
+    JOIN t_color tc ON tc.res = tz.res WHERE date = (?) GROUP BY tz.res'''
     res = dao.exec(sql, _date)
-    s = sum([x[1] for x in res])
-    res = [[k, v / s] for k, v in res]
+    res = {a: [b, c, d] for a, b, c, d in res}
     return jsonify(res)
 
 
@@ -113,6 +117,41 @@ def color():
     return jsonify(res)
 
 
+@app.route('/pic', methods=['GET'])
+def pic():
+    fn = join(FILE_DIR, request.args.get("pic"))
+    if exists(fn):
+        return open(fn, 'r').read()
+    return ''
+
+
+@app.route('/setting', methods=['GET', 'POST'])
+def setting():
+    if request.method == 'GET':
+        sql = '''SELECT k, v FROM t_setting'''
+        # 获取当前颜色设置
+        res = dict(dao.exec(sql))
+    elif request.method == 'POST':
+        if len(request.files) != 0:
+            f = request.files.get('file')
+            header = "data:{};base64,".format(f.content_type)
+            b = str(base64.b64encode(f.stream.read()), encoding="utf-8")
+            with open(join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop", request.form.get('key'))), "w+") as f:
+                f.write(header + b)
+            return jsonify([])
+        sql = '''REPLACE INTO t_setting (k, v) VALUES ((?),(?))'''
+        k = request.form.get('key')
+        v = request.form.get('value')
+        res = dao.exec(sql, k, v)
+        pass
+    else:
+        print('不支持的请求方法')
+        return jsonify([])
+    return jsonify(res)
+
+
 if __name__ == '__main__':
+    dao = Dao(file_name=join(FILE_DIR, 'test.db'))
+
     server = make_server('0.0.0.0', 8899, app, threaded=True)
     server.serve_forever()

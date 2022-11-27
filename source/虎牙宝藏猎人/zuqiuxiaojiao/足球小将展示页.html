@@ -11,10 +11,9 @@
             border: 0;
         }
         table{
-            font-size: 22px;
             Border-spacing: 0;
         }
-        td{
+        td, th{
             border: 1px solid;
             text-align: center;
             width: 110px;
@@ -27,20 +26,20 @@
     <label >列数:</label>
     <input id="col" type="number" min=1 max=10 step=1 value=10 onchange="updata_table()">
     <label >背景图:</label>
-    <input id="bg_size" type="number" min=0 max=100 step=1 value=100 onchange="setBackgrand()">
+    <input id="bg_size" type="number" min=0 max=100 step=1 value=100 onchange="setBackground()">
     <label >刷新时间:</label>
     <input id="delay_time" type="number" min=1 max=10 step=1 value=5 onchange="fresh()">
     <div>
         <table id="data_conut"></table>
         <table id="data_table"></table>
     </div>
+    <div id="ad"></div>
 </body>
 
 
 
 
 <script>
-    
     var DIRE = {
         'LU': '左上',
         'MU': '中上',
@@ -49,8 +48,17 @@
         'MD': '中下',
         'RD': '右下'
     }
+    var OFF_PROB = {
+        'LU': '32.00%',
+        'MU': '32.00%',
+        'RU': '20.00%',
+        'LD': '7.00%',
+        'MD': '5.00%',
+        'RD': '4.00%'
+    }
 
-    var server_ip = '49.235.109.183'
+    // var server_ip = '49.235.109.183'
+    var server_ip = 'localhost'
     var server_port = 8899
     function ajax_method(url, data, method, success, async) {
         var ajax = new XMLHttpRequest()
@@ -82,51 +90,74 @@
             console.log('Unsupported method')
         }
     }
-
-    var bg
-    drop_zone.ondragover = (e) => {e.preventDefault()}
-    drop_zone.ondrop = (e) => {
-        e.preventDefault()
-        file = e.dataTransfer.files[0]
-        var reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function () { 
-            drop_zone.style = bg = "background: url('" + this.result + "');background-size: " + bg_size.value + "%;"
-        }
-    }
-    function setBackgrand(){
-        drop_zone.style = bg + 'background-size: ' + bg_size.value + '%;'
-    }
-    // test data
-    obj = {"count":{},"data":[[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"],[1,"2020-01-10/20:21:23","tom","#ffffff","#000000"]]}
-    obj = []
-    for (var x = 121; x < 285; x++){
-        obj.push(x)
-    }
+    
+    // 获取配置信息保存到全局
+    var settings
+    ajax_method('setting', null, 'GET', (resp) =>{
+        settings = JSON.parse(resp)
+    })
+    // var bg
+    // drop_zone.ondragover = (e) => {e.preventDefault()}
+    // drop_zone.ondrop = (e) => {
+    //     e.preventDefault()
+    //     file = e.dataTransfer.files[0]
+    //     var reader = new FileReader();
+    //     reader.readAsDataURL(file);
+    //     reader.onload = function () { 
+    //         drop_zone.style = bg = "background: url('" + this.result + "');background-size: " + bg_size.value + "%;"
+    //     }
+    // }
+    // function setBackground(){
+    //     drop_zone.style = bg + 'background-size: ' + bg_size.value + '%;'
+    // }
     // 更新表
     function updata_table(){
-        console.log(new Date())
-        var row = document.getElementById('row')
-        var col = document.getElementById('col')
-        if (parseInt(row.value) > row.max) {
-            row.value = row.max
-        }
-        if (parseInt(col.value) > col.max) {
-            col.value = col.max
-        }
-        if (parseInt(row.value) < row.min) {
-            row.value = row.min
-        }
-        if (parseInt(col.value) < col.min) {
-            col.value = col.min
-        }
-        
+        var row = settings['row_num'] ? settings['row_num'] : 20
+        var col = settings['col_num'] ? settings['col_num'] : 6
         // 获取数据(统计栏)
         var date = new Date().toLocaleDateString()
         var url = 'count?date=' + date
         ajax_method(url, null, 'GET', (resp) => {
             var obj = JSON.parse(resp)
+            var tr_header = document.createElement('tr') // 表头
+            var tr_current = document.createElement('tr') // 当前概率
+            var tr_official = document.createElement('tr') // 官方概率
+            var th_sum = document.createElement('th') // 表头总数
+            var th_current = document.createElement('th') // 表头当前概率
+            var th_official = document.createElement('th') // 表头官方概率
+            tr_header.append(th_sum)
+            tr_current.append(th_current)
+            tr_official.append(th_official)
+            var sum = 0;
+            // 添加表头数据
+            for (idx in DIRE){
+                var th = document.createElement('th')
+                var num = obj[idx] ? obj[idx][0] : 0
+                var font = obj[idx] ? obj[idx][1] : ''
+                var bg = obj[idx] ? obj[idx][2] : ''
+                th.innerHTML = DIRE[idx] + ':' + num
+                th.style = 'color: ' + font + '; background: ' + bg + ';'
+                sum = sum + num
+                tr_header.append(th)
+            }
+            // 添加当前概率
+            for (idx in DIRE){
+                var td = document.createElement('td')
+                var n = obj[idx] ? obj[idx][0] : 0
+                td.innerHTML = (n / sum * 100).toFixed(2) + '%'
+                tr_current.append(td)
+                var td = document.createElement('td')
+                td.innerHTML = OFF_PROB[idx]
+                tr_official.append(td)
+            }
+            th_sum.innerHTML = '总数:' + sum
+            th_current.innerHTML = '当前概率'
+            th_official.innerHTML = '官方概率'
             data_conut.innerHTML = ''
+            data_conut.append(tr_header)
+            data_conut.append(tr_current)
+            data_conut.append(tr_official)
+            // 添加该官方概率
             var tr = document.createElement('tr')
             for (var i = 0; i < obj.length; i++) {
                 var td = document.createElement('td')
@@ -136,35 +167,28 @@
             data_conut.append(tr)
         })
         // 获取数据(数据栏)
-        var url = 'pull?date=' + date + '&limit=' + row.value * col.value
+        var url = 'pull?date=' + date + '&limit=' + row * col
         ajax_method(url, null, 'GET', (resp) => {
             var obj = JSON.parse(resp)
+            var row = settings['row_num'] ? settings['row_num'] : 20
+            var col = settings['col_num'] ? settings['col_num'] : 6
+            var start = row - obj[obj.length - 1][0] % row
+            if (start != row) {
+                for (var i = 0; i < start; i++) {
+                    obj.shift()
+                }
+            }
             var ls = []
-            var row = document.getElementById('row').value
             for (idx in obj){
                 if (ls[idx % row] == undefined) ls[idx % row] = []
                 ls[idx % row].push(obj[idx])
             }
             // 更新页面
-            var row = document.getElementById('row')
-            var col = document.getElementById('col')
-            if (parseInt(row.value) > row.max) {
-                row.value = row.max
-            }
-            if (parseInt(col.value) > col.max) {
-                col.value = col.max
-            }
-            if (parseInt(row.value) < row.min) {
-                row.value = row.min
-            }
-            if (parseInt(col.value) < col.min) {
-                col.value = col.min
-            }
             data_table.innerHTML = ''
-            for (var r = 0; r < row.value; r++){
+            for (var r = 0; r < row; r++){
                 if (ls[r]){
                     var tr = document.createElement('tr')
-                    for (var c = 0; c < col.value; c++){
+                    for (var c = 0; c < col; c++){
                         if (ls[r][c]){
                             var td = document.createElement('td')
                             var b = document.createElement('b')
@@ -185,9 +209,30 @@
         if (timer){
             clearInterval(timer)
         }
-        timer = setInterval(updata_table, delay_time.value * 1000)
+        timer = setInterval(updata_table, settings['fresh_speed'] * 1000)
     }
+
+    function init_ad(){
+        // 添加文字广告
+        var ad_text = settings['ad_text']
+        var ad_size = settings['ad_size']
+        var ad_font = settings['ad_font']
+        var ad_bg = settings['ad_bg']
+        console.log(ad_text, ad_size,ad_font , ad_bg)
+        ad.innerHTML = ""
+        var p = document.createElement("p")
+        p.innerHTML = ad_text
+        p.style = 'max-width: 800px; color: ' + ad_font + '; background: ' + ad_bg + '; font-size:' + ad_size + 'px;'
+        ad.appendChild(p)
+
+        // 添加二维码
+        
+    }
+
+
+
     updata_table()
     fresh()
+    init_ad()
 </script>
 </html>
