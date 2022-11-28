@@ -3,6 +3,12 @@
 ## wsl安装
 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 ## [cmake](https://cmake.org/download/)
+## [MinGW](https://sourceforge.net/projects/mingw-w64/)
+## 镜像配置
+```bash
+RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
+RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
+```
 # 启动命令
 ```bash
 # error: linker `link.exe` not found

@@ -83,14 +83,36 @@
                 <td><input id="ad_pic" type="file"></td>
             </tr>
             <tr>
+                <td>图片距离页面最左边距离</td>
+                <td><input id="ad_pic_x" type="number"></td>
+            </tr>
+            <tr>
+                <td>图片距离页面最顶部距离</td>
+                <td><input id="ad_pic_y" type="number"></td>
+            </tr>
+            <tr>
                 <td>图片大小</td>
                 <td><input id="ad_pic_size" type="number"></td>
             </tr>
         </table>
     </div>
+    <hr>
+    <div>
+        <table class="setting">
+            <tr>
+                <td>行数</td>
+                <td><input id="row_num" min=1 max=40 step=1 value=20 type="number"></td>
+            </tr>
+            <tr>
+                <td>列数</td>
+                <td><input id="col_num" min=1 max=20 step=1 value=6 type="number"></td>
+            </tr>
+        </table>
+    </div>
 </body>
 <script>
-    var server_ip = '49.235.109.183'
+    // var server_ip = '49.235.109.183'
+    var server_ip = 'localhost'
     var server_port = 8899
     function ajax_method(url, data, method, success, async) {
         var ajax = new XMLHttpRequest()
@@ -150,6 +172,14 @@
                         ajax_method(url, form, 'POST')
                     } else {
                         // 字符形式
+                        console.log(e.target.max)
+                        if (e.target.type == 'number') {
+                            if (e.target.value > e.target.max){
+                                e.target.value = e.target.max
+                            } else if (e.target.value < e.target.min){
+                                e.target.value = e.target.min
+                            }
+                        }
                         var data = 'key=' + e.target.id + '&value=' + e.target.value
                         ajax_method(url, data, 'POST')
                     }

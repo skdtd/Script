@@ -28,16 +28,17 @@
         <tbody id="data_conut">
         </tbody>
     </table>
-    <table width='810px' cellspacing="0" cellpadding="0">
+    <table cellspacing="0" cellpadding="0">
         <tbody id="container">
         </tbody>
     </table>
-    <img style="position: absolute; top: 100; left: 810;" id="pic"/>
+    <img id="pic"/>
     <div id='ad'></div>
 </body>
 
 <script>
-    var server_ip = '49.235.109.183'
+    // var server_ip = '49.235.109.183'
+    var server_ip = 'localhost'
     var server_port = 8899
     function ajax_method(url, data, method, success, async) {
         var ajax = new XMLHttpRequest()
@@ -75,17 +76,18 @@
         settings = JSON.parse(resp)
     })
 
-
     function loadAd(){
         ajax_method('pic?pic=ad_pic', null, 'GET', (resp)=>{
-            pic.src=resp
-            pic.width = settings['ad_pic_size']
+            if (settings['ad_pic_size'] > 0){
+                pic.src = resp
+                pic.style = 'position: absolute; top: ' + settings['ad_pic_y'] + '; left: ' + settings['ad_pic_x'] +';'
+                pic.width = settings['ad_pic_size']
+            }
         })
         var ad_text = settings['ad_text']
         var ad_size = settings['ad_size']
         var ad_font = settings['ad_font']
         var ad_bg = settings['ad_bg']
-        // console.log(ad_text, ad_si[ze,ad_font , ad_bg)
         if (!ad_text) {
             return
         }
@@ -94,11 +96,6 @@
         p.innerHTML = ad_text
         p.style = 'max-width: 800px; color: ' + ad_font + '; background: ' + ad_bg + '; font-size:' + ad_size + 'px;'
         ad.appendChild(p)
-        // 添加二维码
-        ajax_method('pic?pic=ad_pic', null, 'GET', (resp)=>{
-            pic.src=resp
-            pic.width = settings['ad_pic_size']
-        })
     }
 
     var mask_div = document.createElement('div');
@@ -222,7 +219,6 @@
         var url = 'count?date=' + date
         ajax_method(url, null, 'GET', (resp) => {
             var obj = JSON.parse(resp)
-            console.log(obj)
             var tr_header = document.createElement('tr') // 表头
             var tr_current = document.createElement('tr') // 当前概率
             var tr_official = document.createElement('tr') // 官方概率
@@ -250,7 +246,10 @@
                 // 添加当前概率
                 var td = document.createElement('td')
                 var n = obj[idx] ? obj[idx][0] : 0
-                td.innerHTML = (n / sum * 100).toFixed(2) + '%'
+                td.innerHTML = '-'
+                if (sum != 0) {
+                    td.innerHTML = (n / sum * 100).toFixed(2) + '%'
+                }
                 td.align = 'center'
                 td.style = 'font-size: 22px; width: 134px; border-right: solid 1px;'
                 tr_current.append(td)
@@ -270,22 +269,26 @@
             data_conut.append(tr_official)
         })
         // 数据区
-        ajax_method("pull?limit=120", null,'GET', (resp) => {
+        var row = settings['row_num'] ? settings['row_num'] : 20
+        var col = settings['col_num'] ? settings['col_num'] : 6
+        ajax_method("pull?limit=" + row * col, null,'GET', (resp) => {
             var obj = JSON.parse(resp)
             var container = document.querySelector('#container');
-            var row = 20
-            var col = 6
+            console.log(row)
+            // 取开始索引
             var start = row - obj[obj.length - 1][0] % row
             if (start != row) {
                 for (var i = 0; i < start; i++) {
                     obj.shift()
                 }
             }
+            // 一维数组转二位数组
             var ls = []
             for (idx in obj){
                 if (ls[idx % row] == undefined) ls[idx % row] = []
                 ls[idx % row].push(obj[idx])
             }
+            // 开始渲染
             table_data = document.createElement("table")
             tBody_data = document.createElement("tBody")
             tBody_data.innerHTML = ''
@@ -318,6 +321,7 @@
         })
     }
     loadAd()
+    // 定时器
     setInterval(function(){ loadXMLDoc() }, 5000);
 </script>
 
