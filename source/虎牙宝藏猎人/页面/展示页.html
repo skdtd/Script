@@ -24,9 +24,21 @@
 </head>
 
 <body>
-    
+    <table cellspacing="0" cellpadding="0">
+        <tbody id="container">
+        </tbody>
+    </table>
+    <img style="position: absolute; top: 10; left: 810;" id="qr"/>
+    <div id='ad'></div>
+</body>
 <script>
-    var mask_div = document.createElement('div');
+</script>
+<script>
+    setInterval(function(){ loadXMLDoc() }, 5000);
+</script>
+
+<script>
+var mask_div = document.createElement('div');
     mask_div.id = 'mask_div1';
     mask_div.style.position = "absolute";
     mask_div.style.left = '20px';
@@ -122,9 +134,10 @@
     window.onload = function () {
         watermark({ watermark_txt: "宝藏猎人交流V: CB04878直播间号: 28025792" });
         loadXMLDoc()
-    };
+    }
+    
+    var server_ip = "121.4.27.170"
     function loadXMLDoc() {
-        var server_ip = document.querySelector('#server_ip').value
         var xmlhttp;
         if (window.XMLHttpRequest) {
             xmlhttp = new XMLHttpRequest();
@@ -190,33 +203,10 @@
         }
         
         xmlhttp.open("GET", "http://" + server_ip + ":8899/pull", false);
-        // xmlhttp.open("GET", "http://localhost:8899/pull", false);
         xmlhttp.send();
         loadAd()
     }
-</script>
-
-    <select id="server_ip" onchange="loadXMLDoc()">
-        <!-- <option value ="localhost" selected>测试</option> -->
-        <option value ="49.235.109.183">服务器1</option>
-        <option value ="121.4.27.170">服务器2</option>
-    </select></br>
-    <table width='810px' cellspacing="0" cellpadding="0">
-        <tbody id="container">
-        </tbody>
-    </table>
-    <img style="position: absolute; top: 10; left: 810;" id="qr"/>
-    <div id='ad'></div>
-</body>
-<script>
-</script>
-<script>
-    setInterval(function(){ loadXMLDoc() }, 5000);
-</script>
-
-<script>
     function loadAd(){
-        var server_ip = document.querySelector('#server_ip').value
         var xmlhttp;
         if (window.XMLHttpRequest) {
             xmlhttp = new XMLHttpRequest();
@@ -250,7 +240,6 @@
                         var qr = document.querySelector('#qr')
                         qr.src = xh.responseText
                     }
-                    console.log("http://" + server_ip +":8899/ad?action=pic&data=" + obj[idx][4])
                     xh.open("GET", "http://" + server_ip +":8899/ad?action=pic&data=" + obj[idx][4], false)
                     xh.send()
                 }
