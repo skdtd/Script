@@ -25,10 +25,14 @@
 
 <body>
     <table cellspacing="0" cellpadding="0">
+        <tbody id="data_conut">
+        </tbody>
+    </table>
+    <table cellspacing="0" cellpadding="0">
         <tbody id="container">
         </tbody>
     </table>
-    <img style="position: absolute; top: 10; left: 810;" id="qr"/>
+    <img style="position: absolute; top: 100; left: 810;" id="qr"/>
     <div id='ad'></div>
 </body>
 <script>
@@ -60,7 +64,6 @@ var mask_div = document.createElement('div');
             watermark_height: 120,//水印长度
             watermark_angle: 15//水印倾斜度数
         };
-        //采用配置项替换默认值，作用类似jquery.extend
         if (arguments.length === 1 && typeof arguments[0] === "object") {
             var src = arguments[0] || {};
             for (key in src) {
@@ -70,20 +73,13 @@ var mask_div = document.createElement('div');
                     defaultSettings[key] = src[key];
             }
         }
-
         var oTemp = document.createDocumentFragment();
-
-        //获取页面最大宽度
         var page_width = Math.max(document.body.scrollWidth, document.body.clientWidth);
-        //获取页面最大长度
         var page_height = Math.max(document.body.scrollHeight, document.body.clientHeight);
-
-        //如果将水印列数设置为0，或水印列数设置过大，超过页面最大宽度，则重新计算水印列数和水印x轴间隔
         if (defaultSettings.watermark_cols == 0 || (parseInt(defaultSettings.watermark_x + defaultSettings.watermark_width * defaultSettings.watermark_cols + defaultSettings.watermark_x_space * (defaultSettings.watermark_cols - 1)) > page_width)) {
             defaultSettings.watermark_cols = parseInt((page_width - defaultSettings.watermark_x + defaultSettings.watermark_x_space) / (defaultSettings.watermark_width + defaultSettings.watermark_x_space));
             defaultSettings.watermark_x_space = parseInt((page_width - defaultSettings.watermark_x - defaultSettings.watermark_width * defaultSettings.watermark_cols) / (defaultSettings.watermark_cols - 1));
         }
-        //如果将水印行数设置为0，或水印行数设置过大，超过页面最大长度，则重新计算水印行数和水印y轴间隔
         if (defaultSettings.watermark_rows == 0 || (parseInt(defaultSettings.watermark_y + defaultSettings.watermark_height * defaultSettings.watermark_rows + defaultSettings.watermark_y_space * (defaultSettings.watermark_rows - 1)) > page_height)) {
             defaultSettings.watermark_rows = parseInt((defaultSettings.watermark_y_space + page_height - defaultSettings.watermark_y) / (defaultSettings.watermark_height + defaultSettings.watermark_y_space));
             defaultSettings.watermark_y_space = parseInt(((page_height - defaultSettings.watermark_y) - defaultSettings.watermark_height * defaultSettings.watermark_rows) / (defaultSettings.watermark_rows - 1));
@@ -94,11 +90,9 @@ var mask_div = document.createElement('div');
             y = defaultSettings.watermark_y + (defaultSettings.watermark_y_space + defaultSettings.watermark_height) * i;
             for (var j = 0; j < defaultSettings.watermark_cols; j++) {
                 x = defaultSettings.watermark_x + (defaultSettings.watermark_width + defaultSettings.watermark_x_space) * j;
-
                 var mask_div = document.createElement('div');
                 mask_div.id = 'mask_div' + i + j;
                 mask_div.appendChild(document.createTextNode(defaultSettings.watermark_txt));
-                //设置水印div倾斜显示
                 mask_div.style.webkitTransform = "rotate(-" + defaultSettings.watermark_angle + "deg)";
                 mask_div.style.MozTransform = "rotate(-" + defaultSettings.watermark_angle + "deg)";
                 mask_div.style.msTransform = "rotate(-" + defaultSettings.watermark_angle + "deg)";
@@ -125,11 +119,14 @@ var mask_div = document.createElement('div');
         };
         document.body.appendChild(oTemp);
     }
-    window.onload = function () {
-        watermark({ watermark_txt: "宝藏猎人交流V: CB04878直播间号: 28025792" });
-        loadXMLDoc()
+    OFF_PROB = {
+        '丛林': '32.00%',
+        '沉船': '25.00%',
+        '孤岛': '20.00%',
+        '海底': '12.50%',
+        '峡谷': '6.40%',
+        '沙漠': '4.10%',
     }
-    
     var server_ip = "121.4.27.170"
     function loadXMLDoc() {
         var xmlhttp;
@@ -143,27 +140,61 @@ var mask_div = document.createElement('div');
             if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
                 var container = document.querySelector('#container');
                 obj = JSON.parse(xmlhttp.responseText)
-                // 生成统计区
-                table_sum = document.createElement("table")
-                tBody_sum = document.createElement("tBody")
-                htr = tBody_sum.insertRow()
-                for (const idx in obj.count) {
-                    key = htr.insertCell()
-                    value = htr.insertCell()
-                    key.width = 64
-                    value.width = 70
-                    key.align = "center"
-                    value.align = "center"
-                    key.style = "border-top: solid 1px;"
-                    value.style = "border-right: solid 1px; border-top: solid 1px; font-size: 18px"
-                    var bkey = document.createElement("b")
-                    var bvalue = document.createElement("b")
-                    bkey.innerHTML = obj.count[idx][0]
-                    bvalue.innerHTML = obj.count[idx][1] + "<hr>" + Math.floor(obj.count[idx][1] / obj.total * 10000) /100 + "%"
-                    key.append(bkey)
-                    value.append(bvalue)
+                var date = new Date().toLocaleDateString()
+                // 统计区
+                var tr_header = document.createElement('tr') // 表头
+                var tr_current = document.createElement('tr') // 当前概率
+                var tr_official = document.createElement('tr') // 官方概率
+                var th_sum = document.createElement('th') // 表头总数
+                var th_current = document.createElement('th') // 表头当前概率
+                var th_official = document.createElement('th') // 表头官方概率
+                th_official.style = th_current.style = th_sum.style = 'font-size: 22px; width: 134px; border-right: solid 1px;'
+                tr_header.append(th_sum)
+                tr_current.append(th_current)
+                tr_official.append(th_official)
+                var sum = 0;
+                // 添加表头数据
+                for (idx in obj['count']){
+                    item = obj['count'][idx]
+                    var th = document.createElement('th')
+                    var num = item ? item[1] : 0
+                    var font = item ? item[2] : ''
+                    var bg = item ? item[3] : ''
+                    th.innerHTML = item[0] + ':' + num
+                    th.style = 'color: ' + font + '; background: ' + bg + '; font-size: 22px; width: 134px; border-right: solid 1px;'
+                    sum = sum + num
+                    tr_header.append(th)
                 }
-                // 生成数据区
+                for (idx in obj['count']){
+                    item = obj['count'][idx]
+                    // 添加当前概率
+                    var td = document.createElement('td')
+                    var n = item ? item[1] : 0
+                    console.log(n ,sum)
+                    td.innerHTML = '-'
+                    if (sum != 0) {
+                        td.innerHTML = (n / sum * 100).toFixed(2) + '%'
+                    }
+                    td.align = 'center'
+                    td.style = 'font-size: 22px; width: 134px; border-right: solid 1px;'
+                    tr_current.append(td)
+                    // 添加该官方概率
+                    var td = document.createElement('td')
+                    td.align = 'center'
+                    td.style = 'font-size: 22px; width: 134px; border-right: solid 1px;'
+                    td.innerHTML = OFF_PROB[item[0]]
+                    tr_official.append(td)
+                }
+
+
+                th_sum.innerHTML = '总数:' + sum
+                th_current.innerHTML = '当前概率'
+                th_official.innerHTML = '官方概率'
+                data_conut.innerHTML = ''
+                data_conut.append(tr_header)
+                data_conut.append(tr_current)
+                data_conut.append(tr_official)
+                // 数据区
                 table_data = document.createElement("table")
                 tBody_data = document.createElement("tBody")
                 for (const outter in obj.data) {
@@ -186,16 +217,12 @@ var mask_div = document.createElement('div');
                         resCell.append(b)
                     }
                 }
-                table_sum.appendChild(tBody_sum)
                 table_data.appendChild(tBody_data)
-                table_sum.style = "font-size: 20; border-bottom:  solid 1px"
                 table_data.style = "font-size: 20"
                 container.innerHTML = ""
-                container.appendChild(table_sum)
                 container.appendChild(table_data)
             }
         }
-        
         xmlhttp.open("GET", "http://" + server_ip + ":8899/pull", false);
         xmlhttp.send();
     }
@@ -211,9 +238,7 @@ var mask_div = document.createElement('div');
             try {
                 obj = JSON.parse(xmlhttp.responseText)
             } catch(error) {
-                // 发生异常时要执行的操作
             }
-            // var obj = JSON.parse(xmlhttp.responseText)
             for (idx in obj) {
                 if (obj[idx][1] == "ad") {
                     var ad = document.querySelector('#ad')
@@ -241,6 +266,8 @@ var mask_div = document.createElement('div');
         xmlhttp.open("GET", "http://" + server_ip + ":8899/ad", false)
         xmlhttp.send()
     }
+    watermark({ watermark_txt: "宝藏猎人交流V: CB04878直播间号: 28025792" });
+    loadXMLDoc()
     loadAd()
     setInterval(function(){ loadXMLDoc() }, 5000);
 </script>
