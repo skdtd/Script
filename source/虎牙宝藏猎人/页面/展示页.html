@@ -32,12 +32,6 @@
     <div id='ad'></div>
 </body>
 <script>
-</script>
-<script>
-    setInterval(function(){ loadXMLDoc() }, 5000);
-</script>
-
-<script>
 var mask_div = document.createElement('div');
     mask_div.id = 'mask_div1';
     mask_div.style.position = "absolute";
@@ -204,7 +198,6 @@ var mask_div = document.createElement('div');
         
         xmlhttp.open("GET", "http://" + server_ip + ":8899/pull", false);
         xmlhttp.send();
-        loadAd()
     }
     function loadAd(){
         var xmlhttp;
@@ -249,6 +242,7 @@ var mask_div = document.createElement('div');
         xmlhttp.send()
     }
     loadAd()
+    setInterval(function(){ loadXMLDoc() }, 5000);
 </script>
 
 </html>
