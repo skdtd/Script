@@ -1,5 +1,6 @@
 # coding: utf-8
 import datetime
+import sys
 import threading
 import time
 from enum import Enum
@@ -91,16 +92,15 @@ class Collector:
                         cs = [x.get_attribute('content') for x in self.driver.find_elements(By.TAG_NAME, "meta")]
                         if '宝藏猎人' in cs:
                             Log.info("找到宝藏猎人iframe, 进入iframe")
-                            while True:
-                                print('等待结果')
-                                res = self.find_elm(Element.HUNT_RESULT)
-                                if res and res.text.strip():
-                                    Log.info("本次开奖结果为: {}".format(res.text.strip()))
-                                    self.dao.insert_live(LiveEntry(self.room_num, str(datetime.datetime.now().date()),
-                                                                str(datetime.datetime.now().time()).rsplit(":", 1)[0],
-                                                                res.text.strip(), self.URL))
-                                    Log.info("已采集数据, 休息10秒")
-                                    time.sleep(10)
+                            res = self.find_elm(Element.HUNT_RESULT, times=sys.maxsize, interval=0)
+                            if res and res.text.strip():
+                                Log.info("本次开奖结果为: {}".format(res.text.strip()))
+                                self.dao.insert_live(LiveEntry(self.room_num, str(datetime.datetime.now().date()),
+                                                               str(datetime.datetime.now().time()).rsplit(":", 1)[0],
+                                                               res.text.strip(), self.URL))
+                                Log.info("已采集数据, 休息5秒后刷新页面")
+                                time.sleep(5)
+                                self.driver.refresh()
 
                         self.driver.switch_to.default_content()
             except Exception as e:
