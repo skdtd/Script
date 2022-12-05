@@ -1,6 +1,8 @@
 .idea
 *.iml
 target
+build
+dist
 out
 util
 pyqtDemo/src/**/__pycache__

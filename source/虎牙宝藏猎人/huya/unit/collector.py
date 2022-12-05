@@ -13,7 +13,6 @@ from unit.dao import LiveEntry
 
 USER_AGENT = "user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'"
-URL = 'https://www.huya.com/27738407'
 
 
 class Element(Enum):
@@ -39,7 +38,7 @@ class Element(Enum):
 
 class Collector:
     def __init__(self, dao):
-        self.URL = 'https://www.huya.com/27738407'  # 直播间页面
+        self.URL = 'https://www.huya.com/219135'  # 直播间页面
         self.WEIBO_OATH2_URL = 'https://api.weibo.com/oauth2/authorize'  # 微博三方认证页面
         self.WEIBO_LOGIN_URL = 'https://login.sina.com.cn/signup/signin.php'  # 微博用户登录页面
         self.WEIBO_CHECK_URL = 'https://login.sina.com.cn/protection/index'  # 微博用户验证页面
@@ -53,7 +52,7 @@ class Collector:
         self.driver = webdriver.Chrome("chromedriver", options=chrome_options)
         # self.driver.implicitly_wait(7)
         self.dao = dao
-        self.driver.get(URL)
+        self.driver.get(self.URL)
         room = self.find_elm(Element.ROOM_NUM)
         self.room_num = room.text if room else 0
         self.tasks()
