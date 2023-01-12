@@ -65,14 +65,18 @@ class Element(Enum):
     RESULT = ("开奖结果", By.XPATH,
               '//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[2]/div/div[2]/div/div[3]/img')
 
+    OUT_IFRAME = ("外层iframe", By.CLASS_NAME, 'videoComp-90808de0')
+
 
 class Collector:
     def __init__(self, dao):
-        URL = 'https://www.huya.com/28113540'  # 直播间页面
+        URL = 'https://www.huya.com/28025792'  # 直播间页面
         USER_AGENT = "user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'"
+        self.windows_is_open = False
+        self.in_iframe = False
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--window-size=1920,1080')  # 设置当前窗口的宽度和高度
@@ -85,31 +89,10 @@ class Collector:
     def tasks(self):
         threading.Thread(target=self.hunt).start()
 
-    # 抓取相关 ###########################################################################################################
-    def init_iframe(self):
-        try:
-            btn = self.find_elm(Element.BUTTON, 3)
-            if btn:
-                btn.click()
-            iframe = None
-            for item in self.driver.find_elements(By.TAG_NAME, 'iframe'):
-                if item.is_displayed():
-                    iframe = item
-                    break
-            if iframe:
-                self.driver.switch_to.frame(iframe)
-            else:
-                for item in self.driver.find_elements(By.TAG_NAME, 'meta'):
-                    if item.get_attribute('content') == '足球小将':
-                        return True
-        except:
-            pass
-        return False
-
     def catch_res(self):
         while True:
             print("正在等待", datetime.now())
-            res = self.find_elm(Element.RESULT)
+            res = self.find_elm(Element.RESULT, times=sys.maxsize, interval=0.1)
             if res:
                 print(res.get_attribute('src'))
                 s = res.get_attribute('src').split('/')[-1].split('.')[0]
@@ -123,14 +106,35 @@ class Collector:
                 # break
 
     def hunt(self):
+        while not self.windows_is_open:
+            self.open_window()
+        while not self.in_iframe:
+            self.find_iframe()
         while True:
-            if self.init_iframe():
-                self.catch_res()
+            self.catch_res()
+
+    def open_window(self):
+        btn = self.find_elm(Element.BUTTON, 3)
+        if btn:
+            btn.click()
+            self.windows_is_open = True
+
+    def find_iframe(self):
+        try:
+            iframe = [item for item in self.driver.find_elements(By.CLASS_NAME, 'videoComp-90808de0') if
+                      item.is_displayed()]
+            self.driver.switch_to.frame(iframe[0].find_element(By.TAG_NAME, 'iframe'))
+            self.driver.switch_to.frame(self.driver.find_element(By.TAG_NAME, 'iframe'))
+            if '足球小将' in [item.get_attribute('content') for item in self.driver.find_elements(By.TAG_NAME, 'meta')]:
+                self.in_iframe = True
+        except:
+            self.driver.switch_to.default_content()
 
     # 共同方法 ###########################################################################################################
-    def find_elm(self, elm: Element, times: int = 3, interval: int = 1):
+    def find_elm(self, elm: Element, times: int = 3, interval: float = 1.0):
         for idx in range(times):
             try:
+                print('开始查找第{}次, {}'.format(idx + 1, elm))
                 el = self.driver.find_element(*elm.value[1:])
                 if el is not None:
                     return el

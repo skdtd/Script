@@ -9,24 +9,20 @@ from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS, cross_origin
 from werkzeug.serving import make_server
 
-from unit.collector import Collector
 from unit.dao import HuyaDao
-from unit.log import Log
 
 app = Flask(__name__, template_folder=dirname(sys.argv[0]))
 CORS(app, supports_credentials=True)  # 全局跨域
-dao = HuyaDao(file_name=join(dirname(sys.argv[0]), 'live.db'))
-c = Collector(dao)
 
-
-@app.route('/login', methods=['get'])
-def login():
-    if c.weibo_qr:
-        return '<h1>扫码登录</h1><img src="{}"/>'.format(
-            c.weibo_qr)
-    else:
-        return "<h1>没有捕获到可用二维码<h1>"
-
+#
+# @app.route('/login', methods=['get'])
+# def login():
+#     if c.weibo_qr:
+#         return '<h1>扫码登录</h1><img src="{}"/>'.format(
+#             c.weibo_qr)
+#     else:
+#         return "<h1>没有捕获到可用二维码<h1>"
+#
 
 @app.route('/pull', methods=['GET'])
 @cross_origin(supports_credentials=True)
@@ -162,6 +158,7 @@ def add_advertisement():
 
 # MAIN #################################################################################################################
 if __name__ == '__main__':
+    dao = HuyaDao(file_name=join(dirname(sys.argv[0]), os.path.join(os.path.expanduser('~'), "Desktop", 'live.db')))
     server = make_server('0.0.0.0', 8899, app, threaded=True)
-    Log.info("start")
+    print("start")
     server.serve_forever()

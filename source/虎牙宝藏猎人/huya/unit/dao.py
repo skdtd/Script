@@ -1,6 +1,5 @@
 # coding: utf-8
 import sqlite3
-from unit.log import Log
 
 
 class DB:
@@ -84,7 +83,7 @@ class DB:
             self.start()
             self.cursor.execute(sql)
         except Exception as e:
-            Log.warning('>> Create {}'.format(e))
+            pass
         finally:
             self.close()
 
@@ -94,9 +93,8 @@ class DB:
             self.cursor.execute(sql, _data)
             self.conn.commit()
             self.close()
-            Log.info("插入SQL: {}, data: {}".format(sql, _data))
         except Exception as e:
-            Log.warning('>> Insert {}'.format(e))
+            pass
 
     def update(self, sql, _data):
         try:
@@ -104,9 +102,8 @@ class DB:
             self.cursor.execute(sql, _data)
             self.conn.commit()
             self.close()
-            Log.info("更新SQL: {}, data: {}".format(sql, _data))
         except Exception as e:
-            Log.warning('>> Update Error: {}'.format(e))
+            pass
 
     def select(self, sql, cond=None):
         self.start()
@@ -116,7 +113,6 @@ class DB:
             self.cursor.execute(sql)
         res = self.cursor.fetchall()
         self.close()
-        Log.info("查询SQL: {}, condition: {}".format(sql, cond))
         return res
 
     def delete(self, sql, cond=None):
@@ -127,7 +123,6 @@ class DB:
             self.cursor.execute(sql)
         self.conn.commit()
         self.close()
-        Log.info("删除SQL: {}, condition: {}".format(sql, cond))
 
     def close(self):
         self.cursor.close()
