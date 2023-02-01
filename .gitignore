@@ -10,3 +10,4 @@ notebook/机器学习/**/__pycache__
 PythonProject/**/__pycache__
 *.spec
 source/虎牙宝藏猎人/huya/live.db
+**/chrome-win/**

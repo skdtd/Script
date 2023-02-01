@@ -82,7 +82,7 @@ class DB:
         try:
             self.start()
             self.cursor.execute(sql)
-        except Exception as e:
+        except:
             pass
         finally:
             self.close()
@@ -94,7 +94,7 @@ class DB:
             self.conn.commit()
             self.close()
         except Exception as e:
-            pass
+            print(e)
 
     def update(self, sql, _data):
         try:
@@ -102,7 +102,7 @@ class DB:
             self.cursor.execute(sql, _data)
             self.conn.commit()
             self.close()
-        except Exception as e:
+        except:
             pass
 
     def select(self, sql, cond=None):

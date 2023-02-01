@@ -15,6 +15,10 @@ RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
 rustup toolchain install stable-x86_64-pc-windows-gnu
 rustup default stable-x86_64-pc-windows-gnu
 
+# error: windows idea不能debug
+rustup toolchain install stable-x86_64-pc-windows-gnu
+rustup default stable-x86_64-pc-windows-msvc
+
 rustc main.rs           # windows:main.exe linux: main
 
 cargo build             # 构建工程
