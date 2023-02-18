@@ -328,14 +328,24 @@
                         if (ls[r][c]){
                             var td1 = document.createElement('td')
                             var td2 = document.createElement('td')
-                            td1.innerHTML = ls[r][c][2]
-                            td2.innerHTML = "<b>" + ls[r][c][3] + '</b>'
+                            td1.innerHTML = ls[r][c][2] // time
+                            td2.innerHTML = "<b>" + ls[r][c][3] + '</b>' // text
                             td1.width = 64
                             td2.width = 70
                             td1.align = "center"
                             td2.align = "center"
-                            fb = ls[r][c][1] ? ls[r][c][1].split(',') : ["", ""]
-                            td2.style = "color: " + fb[0] + ";background: " + fb[1] +  ";border-right: solid 1px #000000;"
+                            var cs = ls[r][c][3].split(',')
+                            if (cs.length == 1) {
+                                var t = settings[cs[0]]
+                                fb = t ? t.split(',') : ["#000000", "#FFFFFF"]
+                                td2.style = "color: " + fb[0] + ";background: " + fb[1] +  ";border-right: solid 1px #000000;"
+                            } else {
+                                var t1 = settings[cs[0]]
+                                var t2 = settings[cs[1]]
+                                fb1 = t1 ? t1.split(',') : ["#000000", "#FFFFFF"]
+                                fb2 = t2 ? t2.split(',') : ["#000000", "#FFFFFF"]
+                                td2.style = "color: " + fb1[0] + ";background-image: linear-gradient(to right, " + fb1[1] +", " + fb1[1] +", " + fb2[1] +", " + fb2[1] +");border-right: solid 1px #000000;"
+                            }
                             tr.appendChild(td1)
                             tr.appendChild(td2)
                         }

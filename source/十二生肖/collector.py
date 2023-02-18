@@ -3,6 +3,7 @@ import sys
 import time
 from datetime import datetime
 from os.path import join, dirname, expanduser
+from selenium.webdriver.chrome.service import Service
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -17,14 +18,12 @@ IFRAME_CLASS = 'videoComp-90808de0'
 RES = '//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[2]'
 SQL_INSERT_DATA = '''INSERT INTO t_data (id, date, time_stamp, res) VALUES(null, (?), (?), (?))'''
 
+RET = '//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[2]'
+
 
 class Collector:
     def __init__(self, dao):
-        self.URL = 'https://www.huya.com/28099452'  # 直播间页面
-        self.WEIBO_OATH2_URL = 'https://api.weibo.com/oauth2/authorize'  # 微博三方认证页面
-        self.WEIBO_LOGIN_URL = 'https://login.sina.com.cn/signup/signin.php'  # 微博用户登录页面
-        self.WEIBO_CHECK_URL = 'https://login.sina.com.cn/protection/index'  # 微博用户验证页面
-        self.weibo_qr = ''
+        self.URL = 'https://www.huya.com/222523'  # 直播间页面
         chrome_options = Options()
         # chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
@@ -33,8 +32,10 @@ class Collector:
         chrome_options.add_argument('-ignore -ssl-errors')
         chrome_options.add_argument('--disable-software-rasterizer')
         chrome_options.add_argument('--window-size=1920,1080')  # 设置当前窗口的宽度和高度
+        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
         chrome_options.add_argument(USER_AGENT)
-        self.driver = webdriver.Chrome("chromedriver", options=chrome_options)
+        self.driver = webdriver.Chrome(service=Service(executable_path='./chromedriver96.0.4664.110.exe'),
+                                       options=chrome_options)
         self.dao = dao
         self.driver.get(self.URL)
         self.work()
@@ -62,13 +63,20 @@ class Collector:
         print("开始采集")
         while True:
             try:
-                res = self.driver.find_element(By.XPATH, RES)
+                res = self.driver.find_element(By.XPATH, RET)
+                res = res.text.split('\n')
                 if res:
+                    if len(res) == 2:
+                        res = res[0]
+                    elif len(res) == 4:
+                        res = '{},{}'.format(res[0], res[2])
+                    else:
+                        continue
                     _date = str(datetime.now().date()).replace('-', '/')
                     _time = str(datetime.now().time()).rsplit(":", 1)[0]
-                    print(_date, _time, res.text)
-                    self.dao.exec(SQL_INSERT_DATA, _date, _time, res.text)
-                    time.sleep(20)
+                    print(_date, _time, res)
+                    self.dao.exec(SQL_INSERT_DATA, _date, _time, res)
+                    time.sleep(60)
             except:
                 pass
 
