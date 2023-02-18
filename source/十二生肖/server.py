@@ -1,12 +1,11 @@
 # coding: utf-8
 import base64
 import datetime
-import os.path
 import sys
 from os.path import dirname, join, expanduser, exists
 
 from flask import Flask, jsonify, request, render_template
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from werkzeug.serving import make_server
 
 from dao import Dao
@@ -107,4 +106,5 @@ def pic():
 if __name__ == '__main__':
     server = make_server('0.0.0.0', 8899, app, threaded=True)
     print("start")
+
     server.serve_forever()
