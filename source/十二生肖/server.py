@@ -50,6 +50,7 @@ SELECT_DATE_LIST = '''
 SELECT DISTINCT [date] FROM [t_data]
 '''
 
+
 @app.route('/pull', methods=['GET'])
 def pull():
     _date = request.args.get('date')

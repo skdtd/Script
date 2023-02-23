@@ -35,17 +35,18 @@ class DB:
     MAP_TABLE = '''CREATE TABLE IF NOT EXISTS `map`( `res` VARCHAR(100) NOT NULL, `font` VARCHAR(100) NOT NULL, `bg` VARCHAR(100) NOT NULL );'''
     AD_TABLE = '''CREATE TABLE IF NOT EXISTS `ad`(`id` INTEGER PRIMARY KEY,`type` VARCHAR(10) NOT NULL, `enable` VARCHAR(10) NOT NULL, `content` VARCHAR(256) NOT NULL, `param` VARCHAR(256));'''
     # insert
-    INSERT_DATA = '''INSERT INTO live ( `id`, `room_num`, `date`, `time_stamp`, `res`, `url` ) VALUES (NULL, ?, ?, ?, ?, ?);'''
+    INSERT_DATA = '''INSERT INTO live ( `id`, `room_num`, `date`, `time_stamp`, `res`, `url` ) VALUES (?, ?, ?, ?, ?, ?);'''
     INSERT_COLOR = '''INSERT INTO colors ( `color` ) VALUES (?);'''
     INSERT_MAP = '''INSERT INTO map ( `res`, `font`, `bg` ) VALUES (?, "#000000", "#FFFFFF");'''
     INSERT_AD = '''insert into `ad` (`id`, `type`, `enable`, `content`, `param`) VALUES (NULL, ?, ?, ?, ?);'''
     # delete
     DELETE_AD = '''DELETE FROM `ad` WHERE `id` in (?)'''
+    DELETE_BY_ID = '''DELETE FROM `live` WHERE `id` in (?)'''
     # update
     UPDATE_MAP = '''UPDATE map SET `font` = (?), `bg` = (?) WHERE `res` = (?)'''
     UPDATE_AD_DISABLE = '''UPDATE ad SET enable='0' WHERE "type"=(?) and enable='1';'''
     UPDATE_AD_ENABLE = '''UPDATE ad SET enable='1' WHERE "id"=(?)'''
-
+    REPLACE_BY_ID = """REPLACE INTO live ( `id`, `room_num`, `date`, `time_stamp`, `res`, `url` ) VALUES((?), (?), (?), (?), (?), (?));"""
     # select
     SELECT_AD = '''SELECT `id`, `type`, `enable`, `content`, `param` FROM `ad`;'''
     SELECT_ENABLE_AD = '''SELECT `id`, `type`, `enable`, `content`, `param` FROM `ad` where `enable` = '1';'''
@@ -57,6 +58,7 @@ class DB:
     SELECT_ALL_MAP = '''SELECT * from map;'''
     SELECT_MAP = '''select * from (SELECT `live`.`id`, `map`.`font`, `map`.`bg`, `live`.`time_stamp`, `live`.`res` FROM `live` LEFT JOIN `map` ON `map`.`res` = `live`.`res`ORDER BY `live`.`id` DESC LIMIT 120) t order by t.`id`;'''
     SELECT_DATA_COUNT = '''select `live`.`res`, count(`live`.`res`),`MAP`.`font`,`MAP`.`bg` from live LEFT JOIN `map` ON `MAP`.`res` = `live`.`res` where date in (?) group by `live`.`res`;'''
+    SELECT_MAX_ID = """SELECT max(`id`) FROM `live`"""
 
     def __init__(self, file_name):
         self.file_name = file_name
@@ -157,10 +159,8 @@ class HuyaDao(DB):
     def __init__(self, file_name):
         DB.__init__(self, file_name=file_name)
 
-    def insert_live(self, entry: LiveEntry):
-        self.insert(DB.INSERT_DATA,
-                    (entry.get_root_num(), entry.get_date(),
-                     entry.get_time_stamp(), entry.get_result(), entry.get_url()))
+    def insert_live(self, _id, _date, time_stamp, result):
+        self.insert(DB.INSERT_DATA, (_id, "-", _date, time_stamp, result, "-"))
 
     def select_date_count(self, _date):
         return self.select(DB.SELECT_DATA_COUNT, (_date,))
@@ -176,6 +176,15 @@ class HuyaDao(DB):
 
     def select_all_map(self):
         return self.select(DB.SELECT_ALL_MAP)
+
+    def select_max_id(self):
+        return self.select(DB.SELECT_MAX_ID)
+
+    def delete_by_id(self, _id):
+        return self.delete(DB.DELETE_BY_ID, (_id,))
+
+    def replace_by_id(self, _id, _date, time_stamp, res):
+        return self.update(DB.REPLACE_BY_ID, (_id, "-", _date, time_stamp, res, "-"))
 
     def insert_ad(self, _type, data, param):
         return self.insert(DB.INSERT_AD, (_type, '0', data, param,))

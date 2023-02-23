@@ -30,20 +30,16 @@ def pull():
         'time_stamp': v4,
         'result': v5}
         for v1, v2, v3, v4, v5 in res]
-    if len(ls) == 120:
-        _id = int(ls[-1:][0]['id'])
-        f = _id % 20
-        if f != 0:
-            [ls.pop(0) for _ in range(20 - f)]
-    rl = []
-    total = sum([x[1] for x in count_list])
-    _map = {"data": rl, "count": count_list, "total": total}
-    for o in range(20):
-        rl.append([])
-        for i in range(6):
-            if i * 20 + o < len(ls):
-                rl[o].append(ls[i * 20 + o])
-
+    if len(ls) == 0:
+        _map = {"data": [], "count": [], "total": 0}
+    else:
+        last = int(ls[-1]["id"])
+        if last > 120:
+            start = 20 - last % 20
+            if start != 20:
+                ls = ls[start:]
+        total = sum([x[1] for x in count_list])
+        _map = {"data": ls, "count": count_list, "total": total}
     return jsonify(_map)
 
 
@@ -107,6 +103,19 @@ def update():
             ds[k][1] = v
     for k, [f, b] in ds.items():
         dao.update(dao.UPDATE_MAP, (f, b, k))
+    return '更新成功'
+
+
+@app.route('/fix', methods=['POST'])
+def fix():
+    xh = request.args.get('xh')
+    rq = request.args.get('rq')
+    sjc = request.args.get('sjc')
+    jg = request.args.get('jg')
+    if xh and not jg:
+        dao.delete_by_id(xh)
+    else:
+        dao.replace_by_id(xh, rq, sjc, jg)
     return '更新成功'
 
 

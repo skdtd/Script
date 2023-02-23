@@ -10,12 +10,6 @@
 </head>
 
 <body>
-    <label>服务器: </label>
-    <select id="server_ip" onChange="update_date()">
-        <option value="-1" selected>--选择服务器--</option>
-        <option value ="49.235.109.183">服务器1</option>
-        <option value ="121.4.27.170">服务器2</option>
-    </select></br>
     <label>选择日期: </label>
     <select id="date_set" onChange="loadXMLDoc()">
         <option value="-1" selected>--选择日期--</option>
@@ -27,10 +21,11 @@
     </table>
 
     <script>
+        // server_ip = "121.4.27.170"
+        server_ip = "localhost"
         function loadXMLDoc() {
-            var date_set = document.querySelector('#date_set').value
-            var server_ip = document.querySelector('#server_ip').value
-            if (date_set == "-1" || server_ip == "-1") {
+            const date_set = document.querySelector('#date_set').value;
+            if (date_set === "-1" || server_ip === "-1") {
                 return
             }
             var xmlhttp;
@@ -43,7 +38,7 @@
                 xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
             }
             xmlhttp.onreadystatechange = function () {
-                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
                     var container = document.querySelector('#container')
                     container.innerHTML = ""
                     var obj = JSON.parse(xmlhttp.responseText)
@@ -59,11 +54,11 @@
                         value.width = 60
                         key.align = "center"
                         value.align = "center"
-                        if (idx != 5) {
+                        if (idx !== 5) {
                             value.style = "border-right: solid 1px;"
                         }
-                        var bkey = document.createElement("b")
-                        var bvalue = document.createElement("b")
+                        const bkey = document.createElement("b");
+                        const bvalue = document.createElement("b");
                         bkey.innerHTML = obj.count[idx][0]
                         bvalue.innerHTML = obj.count[idx][1] + "<br/>" + Math.floor(obj.count[idx][1] / obj.total * 10000) /100 + "%"
                         key.append(bkey)
@@ -87,24 +82,22 @@
                             resCell.style = "border-top:#cccccc solid 2px; color: " + font + ";background-color: " + bg +";"
                             resCell.innerHTML = res
                         }
-                    } 
-                    
+                    }
+
                     table_sum.appendChild(tBody_sum)
                     table.appendChild(tBody)
                     container.appendChild(table_sum)
                     container.appendChild(table)
                 }
             }
-            // xmlhttp.open("GET", "http://localhost:8899/select_by_date?date=" + date_set, true)
             xmlhttp.open("GET", "http://" + server_ip +":8899/select_by_date?date=" + date_set, true)
             xmlhttp.send()
         }
         function update_date() {
-            var server_ip = document.querySelector('#server_ip').value
-            if (server_ip == "-1") {
+            if (server_ip === "-1") {
                 return
             }
-            var xmlhttp;
+            let xmlhttp;
             if (window.XMLHttpRequest) {
                 //  IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
                 xmlhttp = new XMLHttpRequest();
@@ -114,11 +107,10 @@
                 xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
             }
             xmlhttp.onreadystatechange = function () {
-                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                    var container = document.querySelector('#date_set');
+                if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+                    const container = document.querySelector('#date_set');
                     container.innerHTML = "<option value='-1' selected>--选择日期--</option>"
                     //把后台获取到的数据student渲染到页面
-                    console.log(JSON.parse(xmlhttp.responseText))
                     ls = JSON.parse(xmlhttp.responseText)
                     for (const idx in ls) {
                         opt = document.createElement("option")
@@ -128,10 +120,10 @@
                     }
                 }
             }
-            // xmlhttp.open("GET", "http://localhost:8899/select_date", true);
             xmlhttp.open("GET", "http://" + server_ip + ":8899/select_date", true);
             xmlhttp.send();
         }
+        update_date()
     </script>
 
 </body>

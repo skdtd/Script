@@ -51,7 +51,6 @@ class Collector:
             for iframe in self.driver.find_elements(By.TAG_NAME, 'iframe'):
                 try:
                     if iframe.is_displayed():
-                        t = iframe
                         self.driver.switch_to.frame(iframe)
                         self.driver.switch_to.frame(self.driver.find_element(By.TAG_NAME, 'iframe'))
                         cs = [x.get_attribute('content') for x in self.driver.find_elements(By.TAG_NAME, "meta")]
@@ -59,13 +58,19 @@ class Collector:
                             while True:
                                 res = self.find_elm(HUNT_RESULT, times=sys.maxsize, interval=0)
                                 if res and res.text.strip():
-                                    print("本次开奖结果为: {}".format(res.text.strip()))
-                                    self.dao.insert_live(LiveEntry(0, str(datetime.datetime.now().date()),
-                                                                   str(datetime.datetime.now().time()).rsplit(":", 1)[
-                                                                       0],
-                                                                   res.text.strip(), self.URL))
-                                    print("已采集数据, 休息20秒后刷新页面")
-                                    time.sleep(20)
+                                    try:
+                                        print("本次开奖结果为: {}".format(res.text.strip()))
+                                        max_id = self.dao.select_max_id()
+                                        now = datetime.datetime.now()
+                                        self.dao.insert_live(
+                                            _id=max_id[0][0] + 10,
+                                            _date=str(now.date()),
+                                            time_stamp=str(now.time()).rsplit(":", 1)[0],
+                                            result=res.text.strip())
+                                        print("已采集数据, 休息20秒后刷新页面")
+                                        time.sleep(20)
+                                    except:
+                                        print("加入数据出错")
                 except:
                     print('回到主页面')
                     self.driver.switch_to.default_content()

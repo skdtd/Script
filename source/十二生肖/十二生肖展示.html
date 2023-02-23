@@ -304,6 +304,7 @@
             // 数据区
             var container = document.querySelector('#container');
             _data = obj.data
+            console.log(_data)
             // 取开始索引
             var start = row - _data[_data.length - 1][0] % row
             if ((_data.length >= row *col) && (start != row)) {
