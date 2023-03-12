@@ -1,0 +1,175 @@
+{
+  "main": {
+    "id": "e8374d78bdbb40b5",
+    "type": "split",
+    "children": [
+      {
+        "id": "15c1ac61a9e1ce00",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b21618fbbf4064b5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "笔记/笔记_Rust.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "2663f0515f152fe4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "笔记/笔记_opencv.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8110e4456bb196da",
+    "type": "split",
+    "children": [
+      {
+        "id": "6468ac46433d73ab",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "19c041d53a6a03e0",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "a903f1d837a2ed10",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "32eab390603a703d",
+            "type": "leaf",
+            "state": {
+              "type": "starred",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 290.5
+  },
+  "right": {
+    "id": "81f4da2254154bb0",
+    "type": "split",
+    "children": [
+      {
+        "id": "7beabf0486c0ba89",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4569f8656cd535d4",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "笔记/笔记_opencv.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "dc673fb1208968bb",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "笔记/笔记_opencv.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "a244a8b06ac4847c",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "30372aa54eb64497",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "笔记/笔记_opencv.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false
+    }
+  },
+  "active": "2663f0515f152fe4",
+  "lastOpenFiles": [
+    "笔记/笔记_ansible.md",
+    "笔记/笔记_杂项.md",
+    "笔记/笔记_shell.md",
+    "笔记/笔记_pyautogui.md",
+    "笔记/笔记_pyinstaller.md",
+    "笔记/笔记_python.md",
+    "笔记/笔记_pywin32.md",
+    "笔记/笔记_Rust.md",
+    "笔记/笔记_SpringClould.md",
+    "笔记/笔记_vagrant.md",
+    "笔记/笔记_vcpkg.md"
+  ]
+}
