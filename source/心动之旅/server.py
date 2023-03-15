@@ -2,19 +2,25 @@
 import base64
 import datetime
 import sys
+import time
 from os.path import dirname, join, expanduser, exists
 
-from flask import Flask, jsonify, request
-from flask_cors import CORS, cross_origin
+from flask import Flask, jsonify, request, render_template
+from flask_cors import CORS
 from werkzeug.serving import make_server
 
-from dao import Dao
+from datetime import timedelta
 
 PATH_DESKTOP = join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop"))
 
-app = Flask(__name__, template_folder=dirname(sys.argv[0]))
+app = Flask(__name__, template_folder=dirname(sys.argv[0]), static_folder='static')
 CORS(app, supports_credentials=True)  # 全局跨域
-dao = Dao(file_name=join(PATH_DESKTOP, '心动之旅.db'))
+# 自动重载模板文件
+app.jinja_env.auto_reload = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+# 设置静态文件缓存过期时间
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds=1)
 
 SELECT_MAP = '''
 SELECT *
@@ -53,6 +59,7 @@ REPLACE_BY_ID = '''REPLACE INTO t_data  ( `id`, `date`, `time_stamp`, `res`) VAL
 DELETE_BY_ID = '''DELETE FROM t_data WHERE `id` in (?)'''
 
 
+# 拉取数据
 @app.route('/pull', methods=['GET'])
 def pull():
     _date = request.args.get('date')
@@ -70,13 +77,15 @@ def pull():
     return jsonify(_map)
 
 
-@app.route('/date_count', methods=['GET'])
+# 获取所有日期
+@app.route('/select_date', methods=['GET'])
 def date_count():
     res = dao.exec(SELECT_DATE_LIST)
     res = [x[0] for x in res]
     return jsonify(res)
 
 
+# 设置/读取配置信息
 @app.route('/setting', methods=['GET', 'POST'])
 def setting():
     if request.method == 'GET':
@@ -97,14 +106,7 @@ def setting():
     return jsonify(res)
 
 
-@app.route('/select_date', methods=['get'])
-@cross_origin(supports_credentials=True)
-def select_date():
-    res = dao.exec(SELECT_DATE_LIST)
-    res.reverse()
-    return jsonify(res)
-
-
+# 修改数据
 @app.route('/fix', methods=['POST'])
 def fix():
     xh = request.args.get('xh')
@@ -119,6 +121,7 @@ def fix():
     return '更新成功'
 
 
+# 获取广告图
 @app.route('/pic', methods=['GET'])
 def pic():
     fn = join(PATH_DESKTOP, request.args.get("pic"))
@@ -127,9 +130,76 @@ def pic():
     return ''
 
 
+@app.route('/显示', methods=['GET'])
+def show_page():
+    settings = None
+    for idx in range(5):
+        try:
+            settings = dict(dao.exec(SELECT_SETTING))
+            if settings is not None:
+                break
+        except Exception as e:
+            time.sleep(.1)
+            print(e)
+    return render_template(config.get_show_page(),
+                           items=config.get_items(),
+                           settings=settings,
+                           server=config.get_server(),
+                           server_ip=config.server_ip)
+
+
+@app.route('/全部数据', methods=['GET'])
+def display_page():
+    dates = dao.exec(SELECT_DATE_LIST)
+    dates = [x[0] for x in dates]
+    return render_template(config.get_display_page(),
+                           items=config.get_items(),
+                           dates=dates,
+                           settings=get_settings(),
+                           server=config.get_server())
+
+
+@app.route('/设置', methods=['GET'])
+def setting_page():
+    return render_template(config.get_setting_page(),
+                           items=config.get_items(),
+                           settings=get_settings(),
+                           server=config.get_server())
+
+
+@app.route('/修改数据', methods=['GET'])
+def fix_page():
+    dates = dao.exec(SELECT_DATE_LIST)
+    dates = [x[0] for x in dates]
+    return render_template(config.get_fix_page(),
+                           items=config.get_items(),
+                           dates=dates,
+                           settings=get_settings(),
+                           server=config.get_server())
+
+
+def get_settings():
+    for idx in range(5):
+        try:
+            settings = dict(dao.exec(SELECT_SETTING))
+            if settings is not None:
+                return settings
+        except Exception as e:
+            time.sleep(.1)
+            print(e)
+
+
 # MAIN #################################################################################################################
 if __name__ == '__main__':
-    server = make_server('0.0.0.0', 8899, app, threaded=True)
+    # from config.shengxiao import ShengXiao as Config
+
+    from config.xindong import XinDong as Config
+
+    # from config.baozang import BaoZang as Config
+
+    config = Config()
+    dao = config.get_dao()
+    server = make_server('0.0.0.0', config.server_port, app, threaded=True)
     print("start")
 
     server.serve_forever()

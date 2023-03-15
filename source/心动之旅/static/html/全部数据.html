@@ -1,0 +1,47 @@
+<html>
+
+<head>
+    <script src="{{ url_for('static',filename='js/common.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/show_page.js') }}"></script>
+    <title>全部数据</title>
+</head>
+
+<body>
+<label>选择日期: </label>
+<select id="date_set" onChange="update_page()">
+    <option value="-1" selected>--选择日期--</option>
+    {% for item in dates %}
+    <option>{{item}}</option>
+    {% endfor %}
+</select><br/>
+<table cellspacing="0" cellpadding="0">
+    <tbody id="data_count">
+    </tbody>
+</table>
+<table border="1" align="left" cellspacing="0" cellpadding="0">
+    <tbody id="container" style="display: flex; flex-direction: row">
+    </tbody>
+</table>
+
+<script>
+    settings = JSON.parse('{{settings|tojson}}')
+
+    row = settings['row_num'] ? settings['row_num'] : 20;
+    col = settings['col_num'] ? settings['col_num'] : 600;
+
+    function update_page() {
+        const date_set = document.querySelector('#date_set').value;
+        console.log(date_set)
+        ajax_method(`{{server}}/pull?date=${date_set}`, null, "GET", (resp) => {
+            const obj = JSON.parse(resp);
+            const container = document.querySelector("#container")
+            const data_count = document.querySelector("#data_count")
+            show_probability(data_count, {{items|tojson}}, obj.count)
+            container.innerHTML = ""
+            show_data(container, obj.data)
+        }, true)
+    }
+</script>
+
+</body>
+</html>

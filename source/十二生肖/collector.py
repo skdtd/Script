@@ -1,13 +1,18 @@
 # coding: utf-8
+import json
+import os
 import sys
 import time
 from datetime import datetime
 from os.path import join, dirname, expanduser
+
+from selenium.common import NoSuchElementException
 from selenium.webdriver.chrome.service import Service
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 from dao import Dao
 
@@ -17,7 +22,8 @@ USER_AGENT = "user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
 IFRAME_CLASS = 'videoComp-90808de0'
 RES = '//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[2]'
 SQL_INSERT_DATA = '''INSERT INTO t_data (id, date, time_stamp, res) VALUES(null, (?), (?), (?))'''
-
+MORE = "more-attivity-panel"
+BTN = "front-z730fctu_web_video_com"
 RET = '//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[2]'
 
 
@@ -34,13 +40,41 @@ class Collector:
         chrome_options.add_argument('--window-size=1920,1080')  # 设置当前窗口的宽度和高度
         chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
         chrome_options.add_argument(USER_AGENT)
-        self.driver = webdriver.Chrome(service=Service(executable_path='./chromedriver96.0.4664.110.exe'),
+        self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
                                        options=chrome_options)
         self.dao = dao
         self.driver.get(self.URL)
+        with open("cookies.txt", 'r', encoding='utf8') as f:
+            list_cookies = json.loads(f.read())
+        # 往browser里添加cookies
+        for cookie in list_cookies:
+            cookie_dict = {
+                'domain': '.huya.com',
+                'name': cookie.get('name'),
+                'value': cookie.get('value'),
+                "expires": '',
+                'path': '/',
+                'httpOnly': False,
+                'HostOnly': False,
+                'Secure': False
+            }
+            self.driver.add_cookie(cookie_dict)
+        self.driver.refresh()
+        self.click_btn()
         self.work()
 
     # 抓取相关 ###########################################################################################################
+    def click_btn(self):
+        while True:
+            try:
+                more_btn = self.driver.find_element(By.CLASS_NAME, MORE)
+                self.driver.execute_script("arguments[0].style = 'display:block'", more_btn)
+                self.driver.find_element(By.ID, BTN).click()
+                print("打开十二生肖窗口")
+                break
+            except:
+                time.sleep(1)
+
     def work(self):
         # 进入iframe
         while True:
@@ -77,9 +111,13 @@ class Collector:
                     print(_date, _time, res)
                     self.dao.exec(SQL_INSERT_DATA, _date, _time, res)
                     time.sleep(60)
-            except:
+            except NoSuchElementException as e:
+                pass
+            except Exception as e:
+                print(e)
                 pass
 
 
 if __name__ == "__main__":
+    os.popen("taskkill /IM chrome.exe /F /T").read()
     Collector(Dao(file_name=join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop", '十二生肖.db'))))
