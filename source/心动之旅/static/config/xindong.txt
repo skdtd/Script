@@ -1,0 +1,16 @@
+url=https://www.huya.com/25339982
+ip=124.222.214.146
+port=8899
+db=心动之旅.db
+welcome=心动之旅 启动
+result_xpath=//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[4]/div/div[3]/div[2]
+button_id=front-jiehws8s_web_video_com
+items=巴黎,爱琴海,威尼斯,埃及,冰岛,马尔代夫
+
+
+cookies_file=static/cookies.txt
+more_btn_class=more-attivity-panel
+show_page=static/html/show.html
+setting_page=static/html/setting.html
+fix_page=static/html/fix.html
+display_page=static/html/display.html

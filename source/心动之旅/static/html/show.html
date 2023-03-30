@@ -1,0 +1,67 @@
+<html>
+
+<head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+    </style>
+    <script src="{{ url_for('static',filename='js/common.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/show_page.js') }}"></script>
+    <title>展示</title>
+</head>
+
+<body>
+<table cellspacing="0" cellpadding="0">
+    <tbody id="data_count">
+    </tbody>
+</table>
+<table cellspacing="0" cellpadding="0">
+    <tbody id="container" style="display: flex; flex-direction: row">
+    </tbody>
+</table>
+<img id="pic"/>
+<div id='ad'></div>
+</body>
+
+<script>
+    settings = JSON.parse('{{settings|tojson}}')
+    row = settings['row_num'] ? parseInt(settings['row_num']) : 20;
+    col = settings['col_num'] ? parseInt(settings['col_num']): 6;
+
+    function update() {
+        // 统计区
+        // 数据区
+        ajax_method("{{server}}/pull?limit=1", null, 'GET', (resp) => {
+            const obj = JSON.parse(resp);
+            // 表头
+            show_probability(document.querySelector("#data_count"), {{items|tojson}}, obj.count)
+            // 数据区
+            add_data(document.querySelector("#container"), obj.data[0])
+        })
+    }
+
+    window.onload = function () {
+        watermark({watermark_txt: "宝藏猎人交流V: CB04878直播间号: 28025792"});
+        loadAd("{{server}}/pic?pic=ad_pic", pic, ad)
+        ajax_method("{{server}}/pull?limit=100", null, 'GET', (resp) => {
+            const obj = JSON.parse(resp);
+            // 表头
+            show_probability(document.querySelector("#data_count"), {{items|tojson}}, obj.count)
+            // 数据区
+            show_data(document.querySelector("#container"), obj.data)
+        })
+    };
+    // 定时器
+    setInterval(function () {
+        update()
+    }, 5000);
+</script>
+
+</html>

@@ -34,7 +34,7 @@ class Collector:
         chrome_options.add_argument("blink-settings=imagesEnabled=false")
         # 配置headless模型
         chrome_options.add_argument("--disable-extensions")
-        # chrome_options.add_argument('--window-size=1920,1080')  # 设置当前窗口的宽度和高度
+        chrome_options.add_argument('--window-size=1920,1080')  # 设置当前窗口的宽度和高度
         chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
         chrome_options.add_argument(USER_AGENT)
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
@@ -109,10 +109,7 @@ class Collector:
 
 if __name__ == "__main__":
     popen("taskkill /IM chrome.exe /F /T").read()
-    # from config.shengxiao import ShengXiao as Config
-    # from config.xindong import XinDong as Config
-
-    from config.baozang import BaoZang as Config
+    from config.base_config import Config
 
     opt = Options()
     opt.add_argument('--headless')

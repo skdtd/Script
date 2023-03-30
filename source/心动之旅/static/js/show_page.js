@@ -26,7 +26,7 @@ function show_probability(t_body, items, _header) {
         th.innerHTML = item + ':' + _num
         sum = sum + _num
         th.style.fontSize = "22px"
-        th.style.width = "130px"
+        th.style.width = (settings["header_width"] ? settings["header_width"] : "130") + "px"
         th.style.borderRight = " solid 1px"
         if (_header[item]) {
             const _style = typeof (_header[item][1]) == 'string' ? _header[item][1].split(',') : ['#000000', '#FFFFFF'];
@@ -72,7 +72,7 @@ function add_td(t_tr, _data) {
     const td = document.createElement('td')
     td.style.display = "flex"
     td.style.flexDirection = "row"
-    td.style.width = "125px"
+    td.style.width = (settings["body_width"] ? settings["body_width"] : "125") + "px"
     td.style.fontSize = "18px"
     const d1 = document.createElement('div')
     const d2 = document.createElement('div')
@@ -83,12 +83,23 @@ function add_td(t_tr, _data) {
     d2.style.width = "60%"
     d2.style.borderRight = "solid 1px"
     d1.innerHTML = _data[2]
-    if (_data[1]) {
-        let cb = _data[1].split(',')
-        d2.style.color = cb[0]
-        d2.style.background = cb[1]
+    if (_data[3].indexOf(',') !== -1) {
+        // 有两个元素
+        let es = _data[3].split(',')
+        let b1 = settings[es[0]] ? settings[es[0]].split(',')[1] : '#FFFFFF'
+        let b2 = settings[es[1]] ? settings[es[1]].split(',')[1] : '#FFFFFF'
+        // liner-gradient
+        d2.style.backgroundImage = `linear-gradient(to right,  ${b1},  ${b2})`
+        d2.innerHTML = _data[3]
+    } else {
+        // 单个元素
+        if (_data[1]) {
+            let cb = _data[1].split(',')
+            d2.style.color = cb[0]
+            d2.style.background = cb[1]
+        }
+        d2.innerHTML = _data[3]
     }
-    d2.innerHTML = _data[3]
     td.append(d1)
     td.append(d2)
     t_tr.append(td)

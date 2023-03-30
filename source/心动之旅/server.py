@@ -191,13 +191,10 @@ def get_settings():
 
 # MAIN #################################################################################################################
 if __name__ == '__main__':
-    # from config.shengxiao import ShengXiao as Config
-
-    from config.xindong import XinDong as Config
-
-    # from config.baozang import BaoZang as Config
+    from config.base_config import Config
 
     config = Config()
+
     dao = config.get_dao()
     server = make_server('0.0.0.0', config.server_port, app, threaded=True)
     print("start")
