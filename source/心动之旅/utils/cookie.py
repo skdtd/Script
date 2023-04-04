@@ -46,3 +46,4 @@ def get_cookie(url, cookies_filename):
 if __name__ == "__main__":
     get_cookie("https://www.huya.com/", "cookies.txt")
     pass
+

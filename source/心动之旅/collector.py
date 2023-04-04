@@ -1,7 +1,10 @@
 # coding: utf-8
 import json
+import os
+import sys
 import time
 from os import popen
+from os.path import join, dirname, expanduser
 
 from selenium.common import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
@@ -26,13 +29,10 @@ class Collector:
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('-ignore-certificate-errors')
         chrome_options.add_argument('-ignore -ssl-errors')
-        # 配置headless模型
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument('--disable-software-rasterizer')
         chrome_options.add_argument('--allow-running-insecure-content')
-        # 配置headless模型
         chrome_options.add_argument("blink-settings=imagesEnabled=false")
-        # 配置headless模型
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument('--window-size=1920,1080')  # 设置当前窗口的宽度和高度
         chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -95,6 +95,9 @@ class Collector:
             break
         # 查找数据
         print("开始采集")
+        path_desktop = join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop"))
+        with open(join(path_desktop, "c_pid"), "w+", encoding="GBK") as f:
+            f.write(sys.argv[0] + ":" + str(os.getpid()))
         while True:
             try:
                 res = self.driver.find_element(By.XPATH, self.config.get_result_xpath())
@@ -108,7 +111,7 @@ class Collector:
 
 
 if __name__ == "__main__":
-    popen("taskkill /IM chrome.exe /F /T").read()
+    popen("taskkill /IM chrome* /F /T").read()
     from config.base_config import Config
 
     opt = Options()

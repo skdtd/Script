@@ -3,6 +3,7 @@ import base64
 import datetime
 import sys
 import time
+from os import popen, startfile, remove
 from os.path import dirname, join, expanduser, exists
 
 from flask import Flask, jsonify, request, render_template
@@ -12,6 +13,7 @@ from werkzeug.serving import make_server
 from datetime import timedelta
 
 PATH_DESKTOP = join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop"))
+PID_FILE = join(PATH_DESKTOP, "c_pid")
 
 app = Flask(__name__, template_folder=dirname(sys.argv[0]), static_folder='static')
 CORS(app, supports_credentials=True)  # 全局跨域
@@ -119,6 +121,20 @@ def fix():
         rq = rq.replace("-", "/")
         dao.exec(REPLACE_BY_ID, xh, rq, sjc, jg)
     return '更新成功'
+
+
+@app.route('/status', methods=['GET'])
+def status():
+    return jsonify(exists(PID_FILE))
+
+
+@app.route('/restart', methods=['GET'])
+def restart():
+    popen("taskkill /IM collector.exe /F /T").read()
+    if exists(PID_FILE):
+        remove(PID_FILE)
+    startfile(join(PATH_DESKTOP, "collector"))
+    return 'OK'
 
 
 # 获取广告图

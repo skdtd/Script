@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     <meta charset="UTF-8">
     <script src="{{ url_for('static',filename='js/common.js') }}"></script>
     <title>颜色设置</title>
@@ -99,6 +100,17 @@
         </tr>
     </table>
 </div>
+<hr>
+<div>
+    <table>
+        <tr>
+            <td>
+                <button id="restart" onclick="rs(this)">重启采集</button>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+</div>
 </body>
 <script>
     settings = JSON.parse('{{settings|tojson}}')
@@ -126,7 +138,7 @@
             elm.value = settings[idx]
         } else {
             const inputs = elm.getElementsByTagName('input')
-            const fb = settings[idx] ? settings[idx].split(',') : ["#000000", "#000000", 0]
+            const fb = settings[idx] ? settings[idx].split(',') : ["#FFFFFF", "#000000", 0]
             inputs[0].value = fb[0]
             inputs[1].value = fb[1]
             inputs[2].value = fb[2]
@@ -175,6 +187,22 @@
         }
     }
 
+    function rs(e) {
+        console.log(e)
+        e.innerHTML = "重新启动中"
+        e.disabled = true
+        ajax_method("{{server}}/restart", null, 'GET')
+        let timer = setInterval(() => {
+            ajax_method("{{server}}/status", null, 'GET', resp => {
+                console.log("flag", JSON.parse(resp), timer)
+                if (JSON.parse(resp)) {
+                    clearInterval(timer)
+                    e.innerHTML = "重新启动"
+                    e.disabled = false
+                }
+            })
+        }, 500)
+    }
 
 </script>
 

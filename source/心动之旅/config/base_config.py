@@ -15,7 +15,6 @@ class Config:
         with open(join(base_dir, ls[0]), 'r+', encoding="utf-8") as f:
             cfg = [line.strip().split("=", 1) for line in f.readlines() if line.strip()]
             self.cfg = dict(cfg)
-            print(self.cfg)
         self.server_ip = self.cfg['ip']
         self.server_port = self.cfg['port']
         self.dao = Dao(file_name=join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop", self.cfg['db'])))

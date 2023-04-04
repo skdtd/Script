@@ -36,7 +36,6 @@ class Dao:
                 print("sql第%s次执行失败, 开始重试" % (idx + 1))
                 print(e)
                 time.sleep(interval)
-                continue
             finally:
                 self.close()
         print("sql%s次执行失败全部失败" % times)

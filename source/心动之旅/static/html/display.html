@@ -26,8 +26,8 @@
 <script>
     settings = JSON.parse('{{settings|tojson}}')
 
-    row = settings['row_num'] ? settings['row_num'] : 20;
-    col = settings['col_num'] ? settings['col_num'] : 600;
+    row = 20;
+    col = 600;
 
     function update_page() {
         const date_set = document.querySelector('#date_set').value;
