@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 if __name__ == '__main__':
@@ -17,3 +19,4 @@ if __name__ == '__main__':
         # '--html=report/report.html'  # 生成html报告
 
     ])
+    os.system("allure generate ./allure-results -o ./report --clean")
