@@ -23,8 +23,12 @@ IFRAME_CLASS = 'videoComp-90808de0'
 
 
 class Collector:
-    def __init__(self, _config: Config, chrome_options: Options):
+    def __init__(self, _config: Config, headless: bool):
         self.config = _config
+
+        chrome_options = Options()
+        if headless:
+            chrome_options.add_argument('--headless')
         chrome_options.add_argument("--mute-audio")
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('-ignore-certificate-errors')
@@ -37,27 +41,32 @@ class Collector:
         chrome_options.add_argument('--window-size=1920,1080')  # 设置当前窗口的宽度和高度
         chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
         chrome_options.add_argument(USER_AGENT)
-        self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
-        self.driver.get(self.config.get_url())
-        with open(self.config.get_cookies_file(), 'r', encoding='utf8') as f:
-            list_cookies = json.loads(f.read())
-        # 往browser里添加cookies
-        for cookie in list_cookies:
-            cookie_dict = {
-                'domain': '.huya.com',
-                'name': cookie.get('name'),
-                'value': cookie.get('value'),
-                "expires": '',
-                'path': '/',
-                'httpOnly': False,
-                'HostOnly': False,
-                'Secure': False
-            }
-            self.driver.add_cookie(cookie_dict)
-        self.driver.refresh()
-        self.click_btn()
-        self.work()
+        while True:
+            self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+            self.driver.get(self.config.get_url())
+            with open(self.config.get_cookies_file(), 'r', encoding='utf8') as f:
+                list_cookies = json.loads(f.read())
+            # 往browser里添加cookies
+            for cookie in list_cookies:
+                cookie_dict = {
+                    'domain': '.huya.com',
+                    'name': cookie.get('name'),
+                    'value': cookie.get('value'),
+                    "expires": '',
+                    'path': '/',
+                    'httpOnly': False,
+                    'HostOnly': False,
+                    'Secure': False
+                }
+                self.driver.add_cookie(cookie_dict)
+            self.driver.refresh()
+            dict_cookies = self.driver.get_cookies()  # 获取list的cookies
+            json_cookies = json.dumps(dict_cookies)  # 转换成字符串保存
+            with open(self.config.get_cookies_file(), 'w') as f:
+                f.write(json_cookies)
+            print('cookies保存成功！')
+            self.click_btn()
+            self.work()
 
     # 抓取相关 ###########################################################################################################
     def click_btn(self):
@@ -104,6 +113,8 @@ class Collector:
                 res = res.text
                 if res:
                     self.config.success_method(res)
+                    self.driver.quit()
+                    break
             except NoSuchElementException:
                 pass
             except Exception as e:
@@ -114,6 +125,4 @@ if __name__ == "__main__":
     popen("taskkill /IM chrome* /F /T").read()
     from config.base_config import Config
 
-    opt = Options()
-    opt.add_argument('--headless')
-    Collector(Config(), opt)
+    Collector(Config(), False)

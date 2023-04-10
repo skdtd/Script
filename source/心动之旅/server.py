@@ -5,6 +5,7 @@ import sys
 import time
 from os import popen, startfile, remove
 from os.path import dirname, join, expanduser, exists
+from threading import Thread, Event
 
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
@@ -50,6 +51,9 @@ ORDER BY [t_data].`id`;
 '''
 SELECT_SETTING = '''
 SELECT [key], [value] FROM [t_setting]
+'''
+SELECT_AUTO_RESTART = '''
+SELECT [value] FROM [t_setting] WHERE [key] = "restart_interval"
 '''
 UPDATE_SETTING = '''
 REPLACE INTO t_setting ([key], [value]) VALUES ((?),(?))
@@ -214,5 +218,4 @@ if __name__ == '__main__':
     dao = config.get_dao()
     server = make_server('0.0.0.0', config.server_port, app, threaded=True)
     print("start")
-
     server.serve_forever()

@@ -111,6 +111,15 @@
         </tr>
     </table>
 </div>
+<hr>
+<div>
+    <table class="setting">
+        <tr>
+            <td>自动重启间隔(秒)</td>
+            <td><input id="restart_interval" min=0 type="number" value=0></td>
+        </tr>
+    </table>
+</div>
 </body>
 <script>
     settings = JSON.parse('{{settings|tojson}}')

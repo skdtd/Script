@@ -54,7 +54,6 @@ class Config:
         print(_date, _time, res)
         self.dao.exec(SQL_INSERT_DATA, max_id + 10, _date, _time, res)
         print("数据保存成功 ", res)
-        time.sleep(60)
 
     def get_show_page(self):
         return self.cfg['show_page']

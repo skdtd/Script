@@ -1,11 +1,11 @@
 url=https://www.huya.com/25339982
-ip=124.222.214.146
+ip=127.0.0.1
 port=8899
-db=心动之旅.db
-welcome=心动之旅 启动
+db=浪漫晚宴.db
+welcome=浪漫晚宴 启动
 result_xpath=//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[4]/div/div[3]/div[2]
-button_id=front-jiehws8s_web_video_com
-items=巴黎,爱琴海,威尼斯,埃及,冰岛,马尔代夫
+button_id=front-goj822hm_web_video_com
+items=炒饭,麻辣烫,蛋糕,和风日料,西冷牛扒,澳洲龙虾
 
 
 cookies_file=static/cookies.txt
