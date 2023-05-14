@@ -8,6 +8,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 USER_AGENT = "user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'"
@@ -103,7 +104,6 @@ def parse_profile():
 def collect(pid, ns):
     log(pid, '初始化浏览器')
     chrome_options = Options()
-    chrome_options.binary_location = './chrome-win/chrome.exe'
     if not ns.browser:
         chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
@@ -118,8 +118,7 @@ def collect(pid, ns):
     })
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
     chrome_options.add_argument(USER_AGENT)
-    driver = Chrome(service=Service("./chrome-win/chromedriver.exe"),
-                    options=chrome_options)
+    driver = Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
     log(pid, '打开页面', BASE_URL + pid)
     driver.get(BASE_URL + pid)
     log(pid, '开始展开页面')

@@ -12,7 +12,7 @@
             border-collapse: collapse;
         }
     </style>
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+    <meta http-equiv="Content-Security-Policy">
     <script src="{{ url_for('static',filename='js/common.js') }}"></script>
     <script src="{{ url_for('static',filename='js/show_page.js') }}"></script>
     <title>展示</title>
@@ -32,33 +32,45 @@
 </body>
 
 <script>
-    settings = JSON.parse('{{settings|tojson}}')
-    row = settings['row_num'] ? parseInt(settings['row_num']) : 20;
-    col = settings['col_num'] ? parseInt(settings['col_num']): 6;
+    function ajax_method(url, data, method, success, async) {
+        const ajax = new XMLHttpRequest();
+        ajax.open(method, url, async)
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState === 4 && ajax.status === 200) {
+                if (success) {
+                    success(ajax.responseText)
+                }
+            } else {
+                // nothing todo
+            }
+        }
+        if (method.toUpperCase() === 'GET') {
+            ajax.send()
+        } else if (method.toUpperCase() === 'POST') {
+            if (data) {
+                if (data.constructor.name !== 'FormData') {
+                    ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+                }
+                ajax.send(data)
+            } else {
+                ajax.send()
+            }
+        } else {
+            console.log('Unsupported method')
+        }
+    }
 
     function update() {
         // 统计区
         // 数据区
-        ajax_method("{{server}}/pull?limit=1", null, 'GET', (resp) => {
+        ajax_method("124.222.214.146/pull", null, 'GET', (resp) => {
             const obj = JSON.parse(resp);
-            // 表头
-            show_probability(document.querySelector("#data_count"), {{items|tojson}}, obj.count)
+            console.log(obj)
             // 数据区
             add_data(document.querySelector("#container"), obj.data[0])
         })
     }
 
-    window.onload = function () {
-        watermark({watermark_txt: "宝藏猎人交流V: CB04878直播间号: 28025792"});
-        loadAd("{{server}}/pic?pic=ad_pic", pic, ad)
-        ajax_method("{{server}}/pull?limit=100", null, 'GET', (resp) => {
-            const obj = JSON.parse(resp);
-            // 表头
-            show_probability(document.querySelector("#data_count"), {{items|tojson}}, obj.count)
-            // 数据区
-            show_data(document.querySelector("#container"), obj.data)
-        })
-    };
     // 定时器
     setInterval(function () {
         update()

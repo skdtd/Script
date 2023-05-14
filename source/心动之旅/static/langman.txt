@@ -1,0 +1,16 @@
+url=https://www.huya.com/25339982
+ip=124.222.214.146
+port=8899
+db=浪漫晚宴.db
+welcome=浪漫晚宴 启动
+result_xpath=//*[@id="root"]/div/div/div/div[2]/div/div/div/div[2]/div/div/div[4]/div/div[3]/div[2]
+button_id=front-goj822hm_web_video_com
+items=炒饭,麻辣烫,蛋糕,和风日料,西冷牛扒,澳洲龙虾
+
+
+cookies_file=static/cookies.txt
+more_btn_class=more-attivity-panel
+show_page=static/html/show.html
+setting_page=static/html/setting.html
+fix_page=static/html/fix.html
+display_page=static/html/display.html

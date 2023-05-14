@@ -1,6 +1,7 @@
 <html>
 
 <head>
+    <meta http-equiv="Content-Security-Policy">
     <script src="{{ url_for('static',filename='js/common.js') }}"></script>
     <script src="{{ url_for('static',filename='js/show_page.js') }}"></script>
     <title>全部数据</title>
@@ -8,6 +9,7 @@
 
 <body>
 <label>选择日期: </label>
+
 <select id="date_set" onChange="update_page()">
     <option value="-1" selected>--选择日期--</option>
     {% for item in dates %}

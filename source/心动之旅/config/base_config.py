@@ -39,9 +39,7 @@ class Config:
         return self.cfg['cookies_file']
 
     def success_method(self, par):
-        print(par)
         res = par.split('\n')
-        print(res)
         if len(res) == 4:
             res = '{},{}'.format(res[0], res[2])
         else:
