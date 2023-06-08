@@ -1,0 +1,46 @@
+name: dev
+networks:
+  persist:
+    driver: bridge
+services:
+  app:
+    networks:
+      - persist
+    entrypoint:
+      - sleep
+      - infinity
+    #    image: openjdk:11
+    image: centos
+    init: true
+    volumes:
+      - C:\Users\86178\Desktop\demo:/opt/demo
+    restart: always
+  mysql:
+    image: mysql
+    networks:
+      - persist
+    ports:
+      - 3366:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    privileged: true
+    restart: always
+    volumes:
+      - D:/DockerData/mysqld/mysql-files:/var/lib/mysql-files
+      - D:/DockerData/mysqld/data:/var/lib/mysql
+      - D:/DockerData/mysqld/sock:/var/run/mysqld
+      - D:/DockerData/mysqld/logs:/logs
+  redis:
+    networks:
+      - persist
+    image: redis
+    ports:
+      - 6399:6379
+    restart: always
+  nacos:
+    networks:
+      - persist
+    image: nacos/nacos-server
+    ports:
+      - 8844:8848
+    restart: always
