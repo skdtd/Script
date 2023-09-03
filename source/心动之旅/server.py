@@ -15,7 +15,7 @@ from datetime import timedelta
 
 PATH_DESKTOP = join(dirname(sys.argv[0]), join(expanduser('~'), "Desktop"))
 PID_FILE = join(PATH_DESKTOP, "c_pid")
-
+print(sys.argv[0])
 app = Flask(__name__, template_folder=dirname(sys.argv[0]), static_folder='static')
 CORS(app, supports_credentials=True)  # 全局跨域
 # 自动重载模板文件

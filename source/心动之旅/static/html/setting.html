@@ -4,7 +4,6 @@
 <head>
     <meta http-equiv="Content-Security-Policy">
     <meta charset="UTF-8">
-    <script src="{{ url_for('static',filename='js/common.js') }}"></script>
     <title>颜色设置</title>
     <style>
         * {
@@ -26,67 +25,67 @@
         <tr id="{{item}}">
             <td>{{item}}</td>
             <td><input type="color"></td>
-            <td><input type="color"></td>
+            <td><input type="color" value="#FFFFFF"></td>
             <td><input type="number" max="100" min="0" value="0">%</td>
         </tr>
         {% endfor %}
     </table>
 </div>
-<hr>
-<div>
-    <table class="setting">
-        <tr>
-            <td>文字显示</td>
-            <td><input id="ad_text" type="text"></td>
-        </tr>
-        <tr>
-            <td>文字大小</td>
-            <td><input id="ad_size" min=1 max=100 step=1 value=22 type="number"></td>
-        </tr>
-        <tr>
-            <td>文字颜色</td>
-            <td><input id="ad_font" type="color"></td>
-        </tr>
-        <tr>
-            <td>文字背景颜色</td>
-            <td><input id="ad_bg" type="color"></td>
-        </tr>
-    </table>
-</div>
-<hr>
-<div>
-    <table class="setting">
-        <tr>
-            <td>侧边图片</td>
-            <td><input id="ad_pic" type="file"></td>
-        </tr>
-        <tr>
-            <td>图片距离页面最左边距离</td>
-            <td><input id="ad_pic_x" type="number"></td>
-        </tr>
-        <tr>
-            <td>图片距离页面最顶部距离</td>
-            <td><input id="ad_pic_y" type="number"></td>
-        </tr>
-        <tr>
-            <td>图片大小</td>
-            <td><input id="ad_pic_size" max=1000 min=1 type="number"></td>
-        </tr>
-    </table>
-</div>
-<hr>
-<div>
-    <table class="setting">
-        <tr>
-            <td>行数</td>
-            <td><input id="row_num" min=1 max=40 step=1 value=20 type="number"></td>
-        </tr>
-        <tr>
-            <td>列数</td>
-            <td><input id="col_num" min=1 max=20 step=1 value=6 type="number"></td>
-        </tr>
-    </table>
-</div>
+<!--<hr>-->
+<!--<div>-->
+<!--    <table class="setting">-->
+<!--        <tr>-->
+<!--            <td>文字显示</td>-->
+<!--            <td><input id="ad_text" type="text"></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td>文字大小</td>-->
+<!--            <td><input id="ad_size" min=1 max=100 step=1 value=22 type="number"></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td>文字颜色</td>-->
+<!--            <td><input id="ad_font" type="color"></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td>文字背景颜色</td>-->
+<!--            <td><input id="ad_bg" type="color"></td>-->
+<!--        </tr>-->
+<!--    </table>-->
+<!--</div>-->
+<!--<hr>-->
+<!--<div>-->
+<!--    <table class="setting">-->
+<!--        <tr>-->
+<!--            <td>侧边图片</td>-->
+<!--            <td><input id="ad_pic" type="file"></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td>图片距离页面最左边距离</td>-->
+<!--            <td><input id="ad_pic_x" type="number"></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td>图片距离页面最顶部距离</td>-->
+<!--            <td><input id="ad_pic_y" type="number"></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td>图片大小</td>-->
+<!--            <td><input id="ad_pic_size" max=1000 min=1 type="number"></td>-->
+<!--        </tr>-->
+<!--    </table>-->
+<!--</div>-->
+<!--<hr>-->
+<!--<div>-->
+<!--    <table class="setting">-->
+<!--        <tr>-->
+<!--            <td>行数</td>-->
+<!--            <td><input id="row_num" min=1 max=40 step=1 value=20 type="number"></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td>列数</td>-->
+<!--            <td><input id="col_num" min=1 max=20 step=1 value=6 type="number"></td>-->
+<!--        </tr>-->
+<!--    </table>-->
+<!--</div>-->
 <hr>
 <div>
     <table class="setting">
@@ -102,8 +101,23 @@
 </div>
 </body>
 <script>
-    settings = JSON.parse('{{settings|tojson}}')
-    const url = "{{server}}/setting";
+    function ajax_method(url, data, method, success, async) {
+        const ajax = new XMLHttpRequest();
+        ajax.open(method, url, async)
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState === 4 && ajax.status === 200) if (success) success(ajax.responseText)
+        }
+        if (method.toUpperCase() === 'GET') ajax.send()
+        else if (method.toUpperCase() === 'POST') {
+            if (data) {
+                if (data.constructor.name !== 'FormData') ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+                ajax.send(data)
+            } else ajax.send()
+        }
+    }
+
+    let settings = JSON.parse('{{settings|tojson}}')
+    const url = "/setting";
     // 为colors中的每个input添加事件
     const colors = document.getElementById('colors')
     const inputs = colors.getElementsByTagName('input')
@@ -175,24 +189,6 @@
             }
         }
     }
-
-    function rs(e) {
-        console.log(e)
-        e.innerHTML = "重新启动中"
-        e.disabled = true
-        ajax_method("{{server}}/restart", null, 'GET')
-        let timer = setInterval(() => {
-            ajax_method("{{server}}/status", null, 'GET', resp => {
-                console.log("flag", JSON.parse(resp), timer)
-                if (JSON.parse(resp)) {
-                    clearInterval(timer)
-                    e.innerHTML = "重新启动"
-                    e.disabled = false
-                }
-            })
-        }, 500)
-    }
-
 </script>
 
 </html>

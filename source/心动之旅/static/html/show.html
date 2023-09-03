@@ -1,5 +1,4 @@
-<html>
-
+<html lang="zh">
 <head>
     <style>
         * {
@@ -11,69 +10,249 @@
         table {
             border-collapse: collapse;
         }
+
+        td {
+            text-align: center;
+        }
+
+        span {
+            width: 45px;
+            text-align: center;
+        }
     </style>
     <meta http-equiv="Content-Security-Policy">
-    <script src="{{ url_for('static',filename='js/common.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/show_page.js') }}"></script>
     <title>展示</title>
 </head>
 
 <body>
 <table cellspacing="0" cellpadding="0">
-    <tbody id="data_count">
+    <tbody id="data_count" style="display: flex; flex-direction: row">
     </tbody>
 </table>
 <table cellspacing="0" cellpadding="0">
     <tbody id="container" style="display: flex; flex-direction: row">
     </tbody>
 </table>
-<img id="pic"/>
-<div id='ad'></div>
 </body>
 
 <script>
+
+
     function ajax_method(url, data, method, success, async) {
         const ajax = new XMLHttpRequest();
         ajax.open(method, url, async)
         ajax.onreadystatechange = function () {
-            if (ajax.readyState === 4 && ajax.status === 200) {
-                if (success) {
-                    success(ajax.responseText)
-                }
-            } else {
-                // nothing todo
-            }
+            if (ajax.readyState === 4 && ajax.status === 200) if (success) success(ajax.responseText)
         }
-        if (method.toUpperCase() === 'GET') {
-            ajax.send()
-        } else if (method.toUpperCase() === 'POST') {
+        if (method.toUpperCase() === 'GET') ajax.send()
+        else if (method.toUpperCase() === 'POST') {
             if (data) {
-                if (data.constructor.name !== 'FormData') {
-                    ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-                }
+                if (data.constructor.name !== 'FormData') ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
                 ajax.send(data)
-            } else {
-                ajax.send()
-            }
-        } else {
-            console.log('Unsupported method')
+            } else ajax.send()
         }
     }
 
-    function update() {
-        // 统计区
-        // 数据区
-        ajax_method("124.222.214.146/pull", null, 'GET', (resp) => {
-            const obj = JSON.parse(resp);
-            console.log(obj)
-            // 数据区
-            add_data(document.querySelector("#container"), obj.data[0])
+    let settings = JSON.parse('{{settings|tojson}}')
+    let sx_list = JSON.parse('{{items|tojson}}')
+
+    function add_data() {
+        ajax_method("/get_item", null, 'GET', (resp) => {
+            if (window.last_item === resp) return
+            window.last_item = resp
+            let container = document.querySelector("#container")
+            if (container.childNodes.length === 6 && container.lastChild.childNodes.length === 20) {
+                container.firstChild.remove()
+                container.appendChild(document.createElement('tr'))
+            }
+            let its = resp.split(",")
+            let td = document.createElement('td')
+            td.style.display = "flex"
+            td.style.flexDirection = "row"
+            td.style.borderRight = "1px solid"
+            let span1 = document.createElement('span')
+            span1.style.fontWeight = "900"
+            span1.innerHTML = its[1]
+            let span2 = document.createElement('span')
+            if (its[0].length === 2) {
+                let c1 = (settings[its[0][0]] || ",#FFFFFF").split(",")[1]
+                let c2 = (settings[its[0][1]] || ",#FFFFFF").split(",")[1]
+                span2.style.backgroundImage = `linear-gradient(to right, ${c1}, ${c2})`
+            } else {
+                span2.style.color = (settings[its[0]] || "#000000").split(",")[0]
+                span2.style.background = (settings[its[0]] || ",#FFFFFF").split(",")[1]
+            }
+            span2.innerHTML = its[0]
+            td.appendChild(span1)
+            td.appendChild(span2)
+            td.style.width = settings["body_width"] || "80"
+            container.lastChild.appendChild(td)
         })
     }
 
-    // 定时器
+
+    function init_data() {
+        // 数据区
+        ajax_method("/init_data", null, 'GET', (resp) => {
+            const obj = JSON.parse(resp);
+            let _data = Object.keys(obj).sort(function (a, b) {
+                return obj[a] - obj[b];
+            });
+            console.log(obj)
+            let tbody = document.querySelector("#container")
+            tbody.innerHTML = ""
+            tbody.style.width = "100%"
+            tbody.style.display = "flex"
+            tbody.style.flexDirection = "row"
+            for (let it in _data) {
+                if (!tbody.lastChild || tbody.lastChild.childNodes.length === 20) {
+                    let tr = document.createElement('tr')
+                    tr.style.display = "flex"
+                    tr.style.flexDirection = "column"
+                    tbody.appendChild(tr)
+                }
+                window.last_item = _data[it]
+                let its = _data[it].split(",")
+                let td = document.createElement('td')
+                td.style.display = "flex"
+                td.style.flexDirection = "row"
+                td.style.borderRight = "1px solid"
+                let span1 = document.createElement('span')
+                span1.style.fontWeight = "900"
+                span1.innerHTML = its[1]
+                let span2 = document.createElement('span')
+                if (its[0].length === 2) {
+                    let c1 = (settings[its[0][0]] || ",#FFFFFF").split(",")[1]
+                    let c2 = (settings[its[0][1]] || ",#FFFFFF").split(",")[1]
+                    span2.style.backgroundImage = `linear-gradient(to right, ${c1}, ${c2})`
+                } else {
+                    span2.style.color = (settings[its[0]] || "#000000").split(",")[0]
+                    span2.style.background = (settings[its[0]] || ",#FFFFFF").split(",")[1]
+                }
+                span2.innerHTML = its[0]
+                td.appendChild(span1)
+                td.appendChild(span2)
+                td.style.width = settings["body_width"] || "80"
+                tbody.lastChild.appendChild(td)
+            }
+        })
+    }
+
+
+    function data_area() {
+        // 数据区
+        ajax_method("/pull", null, 'GET', (resp) => {
+            const obj = JSON.parse(resp);
+            let _data = Object.keys(obj.data).sort(function (a, b) {
+                return obj.data[a] - obj.data[b];
+            });
+            document.querySelector(`#total`).innerHTML = obj.total
+            for (let idx in sx_list) {
+                document.querySelector(`#${idx}`).innerHTML = ((obj.count[idx] || 0) / obj.total * 100).toFixed(1) + "%"
+                document.querySelector(`#${idx + idx}`).innerHTML = ((obj.count[idx] || 0))
+            }
+            let tbody = document.querySelector("#container")
+            tbody.innerHTML = ""
+            tbody.style.width = "100%"
+            tbody.style.display = "flex"
+            tbody.style.flexDirection = "row"
+            for (let it in _data) {
+                if (!tbody.lastChild || tbody.lastChild.childNodes.length === 20) {
+                    let tr = document.createElement('tr')
+                    tr.style.display = "flex"
+                    tr.style.flexDirection = "column"
+                    tbody.appendChild(tr)
+                }
+                window.last_item = _data[it]
+                let its = _data[it].split(",")
+                let td = document.createElement('td')
+                td.style.display = "flex"
+                td.style.flexDirection = "row"
+                td.style.borderRight = "1px solid"
+                let span1 = document.createElement('span')
+                span1.style.fontWeight = "900"
+                span1.innerHTML = its[1]
+                let span2 = document.createElement('span')
+                if (its[0].length === 2) {
+                    let c1 = (settings[its[0][0]] || ",#FFFFFF").split(",")[1]
+                    let c2 = (settings[its[0][1]] || ",#FFFFFF").split(",")[1]
+                    span2.style.backgroundImage = `linear-gradient(to right, ${c1}, ${c2})`
+                } else {
+                    span2.style.color = (settings[its[0]] || "#000000").split(",")[0]
+                    span2.style.background = (settings[its[0]] || ",#FFFFFF").split(",")[1]
+                }
+                span2.innerHTML = its[0]
+                td.appendChild(span1)
+                td.appendChild(span2)
+                td.style.width = settings["body_width"] || "80"
+                tbody.lastChild.appendChild(td)
+            }
+        })
+    }
+
+    function count_area() {
+        // 数据区
+        const items = JSON.parse('{{items|tojson}}')
+        let tbody = document.querySelector("#data_count")
+        tbody.innerHTML = ""
+        tbody.style.width = "100%"
+        tbody.style.display = "flex"
+        tbody.style.flexDirection = "row"
+        let tr = document.createElement('tr')
+        tr.style.fontWeight = "900"
+        tr.style.fontSize = "22px"
+        tr.style.width = "90px"
+        tr.style.borderRight = "1px solid"
+        tr.style.borderBottom = "1px solid"
+        tr.style.display = "flex"
+        tr.style.flexDirection = "column"
+        tr.style.width = settings["header_width"] || "70px"
+        tbody.appendChild(tr)
+        let tt = document.createElement('td')
+        let td = document.createElement('td')
+        let ts = document.createElement('td')
+        tr.appendChild(tt)
+        tr.appendChild(td)
+        tr.appendChild(ts)
+        tt.innerHTML = "统计"
+        td.innerHTML = "总数"
+        ts.id = "total"
+        for (let idx in items) {
+            let tr = document.createElement('tr')
+            tr.style.fontWeight = "900"
+            tr.style.fontSize = "22px"
+            tr.style.width = "90px"
+            tr.style.borderRight = "1px solid"
+            tr.style.borderBottom = "1px solid"
+            tr.style.display = "flex"
+            tr.style.flexDirection = "column"
+            tr.style.width = settings["header_width"] || "70px"
+            if (settings[idx]) {
+                let ss = settings[idx].split(",")
+                tr.style.color = ss[0]
+                tr.style.background = ss[1]
+            }
+            tbody.appendChild(tr)
+            let tt = document.createElement('td')
+            let td = document.createElement('td')
+            let tn = document.createElement('td')
+            let ts = document.createElement('td')
+            tr.appendChild(tt)
+            tr.appendChild(td)
+            tr.appendChild(tn)
+            tr.appendChild(ts)
+            tt.innerHTML = idx
+            td.innerHTML = items[idx] + "%"
+            tn.id = idx + idx
+            ts.id = idx
+        }
+    }
+
+    count_area()
+    // data_area()
+    init_data()
     setInterval(function () {
-        update()
+        add_data()
     }, 5000);
 </script>
 
